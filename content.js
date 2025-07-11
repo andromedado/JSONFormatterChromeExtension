@@ -47,32 +47,9 @@ const getBreadcrumbs = () => {
     return [].slice.call(document.querySelectorAll('.active')).map(el => el.querySelector('.key')?.innerText).filter(c => !!c);
 };
 
-const activate = (tr) => {
-    const ancestry = getAncestry(tr);
-    document.querySelectorAll('.active').forEach(el => {
-        if (!ancestry.includes(el)) {
-            console.log(`ancestry does not include ${el.id}`);
-            console.log(ancestry);
-            console.log('deactivating', el.id);
-            deactivate(el);
-        }
-    });
-    tr.classList.add('active');
-    ancestry.forEach(el => el.classList.add('active'));
-    if (tr.dataset.childId) {
-        document.getElementById(tr.dataset.childId).classList.add('visible');
-    }
-    document.documentElement.scrollLeft = document.documentElement.scrollWidth;
-    //document.documentElement.scrollTop = 0; // too annoying i think
-    const breadcrumbs = getBreadcrumbs();
-    breadcrumbsEl.innerText = breadcrumbs.join(' >> ');
-    location.hash = breadcrumbs.join('.');
-};
-
 function Application() {
     const html = el('div');
     this.el = html;
-    el('h1', 'JSON Formatted', html);
     this.breadcrumbsEl = el('div', void 0, html, {class: 'breadcrumbs'});
     this.rootRow = el('tr', void 0, el('tbody', void 0, el('table', void 0, html)));
     this.columns = [];
@@ -91,9 +68,65 @@ Application.prototype.getColumn = function (depth) {
 Application.prototype.jumpIntoCol = function (columnNumber) {
     const visibleInactive = this.getColumn(columnNumber).querySelector('.visible tr');
     if (visibleInactive) {
-        activate(visibleInactive);
+        this.activate(visibleInactive);
     }
 };
+
+Application.prototype.activate = function (tr) {
+    const ancestry = getAncestry(tr);
+    document.querySelectorAll('.active').forEach(el => {
+        if (!ancestry.includes(el)) {
+            deactivate(el);
+        }
+    });
+    ancestry.forEach(el => {
+        el.classList.add('active');
+        el.closest('.json-table').classList.add('visible');
+    });
+    if (tr.dataset.childId) {
+        document.getElementById(tr.dataset.childId).classList.add('visible');
+    }
+    document.documentElement.scrollLeft = document.documentElement.scrollWidth;
+    //document.documentElement.scrollTop = 0; // too annoying i think
+
+    this.renderBreadcrumbs();
+};
+
+Application.prototype.loadBreadcrumbs = function (hash) {
+    const breadcrumbs = hash.split('.');
+    let elementToActivate = null;
+    for (let i = 0; i < breadcrumbs.length; i++) {
+        let queryRoot;
+        if (elementToActivate) {
+            if (elementToActivate.dataset.childId) {
+                queryRoot = document.getElementById(elementToActivate.dataset.childId);
+            } else {
+                break;
+            }
+        } else {
+            queryRoot = this.getColumn(i);
+        }
+        let foundRow = queryRoot.querySelector(`.json-row[data-key="${breadcrumbs[i]}"]`);
+        if (foundRow) {
+            elementToActivate = foundRow;
+        } else {
+            break;
+        }
+    }
+    if (elementToActivate) {
+        this.activate(elementToActivate);
+    } else {
+        this.renderBreadcrumbs();
+    }
+};
+
+Application.prototype.renderBreadcrumbs = function () {
+    const breadcrumbs = getBreadcrumbs();
+    this.breadcrumbsEl.innerText = ['$'].concat(breadcrumbs).join(' >> ');
+    location.hash = breadcrumbs.join('.');
+};
+
+
 
 Application.prototype.right = function () {
     const active = getTip();
@@ -121,7 +154,7 @@ Application.prototype.up = function () {
     if (active) {
         const prevRow = active.previousElementSibling;
         if (prevRow) {
-            activate(prevRow);
+            this.activate(prevRow);
         }
     } else {
         this.jumpIntoCol(0);
@@ -133,7 +166,7 @@ Application.prototype.down = function () {
     if (active) {
         const nextRow = active.nextElementSibling;
         if (nextRow) {
-            activate(nextRow);
+            this.activate(nextRow);
         }
     } else {
         this.jumpIntoCol(0);
@@ -171,6 +204,7 @@ Application.prototype.consume = function (json, currentDepth) {
 
     const addSimpleRow = (key, value, raw) => {
         const tr = el('tr', void 0, rootBody, {class: 'json-row'});
+        tr.dataset.key = key;
         if (key !== void 0) {
             el('td', key, tr, {class: 'key'});
         }
@@ -180,7 +214,7 @@ Application.prototype.consume = function (json, currentDepth) {
         el('td', value, tr, {class: 'value ' + (raw ? 'raw' : 'jsoned')});
 
         tr.addEventListener('click', (e) => {
-            activate(tr);
+            this.activate(tr);
         });
         return tr;
     };
@@ -237,6 +271,13 @@ Application.prototype.init = function (jsonString) {
     document.querySelector('.json-table').classList.add('visible');
     document.body.addEventListener('keydown', this.keyHandler.bind(this));
     document.body.addEventListener('keyup', this.keyHandler.bind(this));
+
+    const hash = (location.hash + '').trim().replace(/^#/, '');
+    if (hash) {
+        this.loadBreadcrumbs(hash);
+    } else {
+        this.renderBreadcrumbs();
+    }
 };
 
 Application.prototype.baseHTML = `<!DOCTYPE html>
@@ -289,6 +330,9 @@ td {
 }
 .jsoned {
   color:rgb(185, 97, 97);
+}
+.raw {
+  color:rgb(97, 98, 185);
 }
 </style>
 </head>
