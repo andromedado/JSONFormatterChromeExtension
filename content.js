@@ -47,12 +47,18 @@ const getBreadcrumbs = () => {
     return [].slice.call(document.querySelectorAll('.active')).map(el => el.querySelector('.key')?.innerText).filter(c => !!c);
 };
 
+const isArrayOrObject = (value) => {
+    const valueType = Object.prototype.toString.call(value);
+    return ['[object Object]', '[object Array]'].includes(valueType);
+};
+
 function Application() {
     const html = el('div');
     this.el = html;
     this.breadcrumbsEl = el('div', void 0, html, {class: 'breadcrumbs'});
     this.rootRow = el('tr', void 0, el('tbody', void 0, el('table', void 0, html, {class: 'root-table'})));
     this.columns = [];
+    this.summarizers = [];
     this.getColumn(0);//initialize the first column
 }
 
@@ -221,8 +227,18 @@ Application.prototype.consume = function (json, currentDepth) {
 
     const addRowWithChild = (key, value) => {
         const valueType = Object.prototype.toString.call(value);
-        const t = '[object Array]' === valueType ? '[]' : '{}';
-        const row = addSimpleRow(key, `${t}▷`, true);
+        const t = '[object Array]' === valueType ? `[${value.length}]` : '{}';//`{${Object.keys(value).length}}`;
+        const karat = el('span');
+
+        for (const summarizer of this.summarizers) {
+            if (summarizer.predicate(value)) {
+                el('span', summarizer.summarize(value), karat, {class: 'summary'});
+                break;
+            }
+        }
+        el('span', `${t}▷`, karat, {class: 'karat-icon'});
+
+        const row = addSimpleRow(key, karat, true);
         const child = this.consume(value, currentDepth + 1);
         row.dataset.childId = child.id;
         row.classList.add('has-child');
@@ -245,8 +261,7 @@ Application.prototype.consume = function (json, currentDepth) {
             addSimpleRow(void 0, '[Empty Object]', true);
         } else {
             for (const [key, value] of Object.entries(json)) {
-                const valueType = Object.prototype.toString.call(value);
-                if (['[object Object]', '[object Array]'].includes(valueType)) {
+                if (isArrayOrObject(value)) {
                     addRowWithChild(key, value);
                 } else {
                     addSimpleRow(key, value);
@@ -278,6 +293,10 @@ Application.prototype.init = function (jsonString) {
     } else {
         this.renderBreadcrumbs();
     }
+};
+
+Application.prototype.registerSummarizer = function (predicate, summarize) {
+    this.summarizers.push({predicate, summarize});
 };
 
 Application.prototype.baseHTML = `<!DOCTYPE html>
@@ -351,6 +370,11 @@ td {
 .raw {
   color:rgb(97, 98, 185);
 }
+.summary {
+  font-style: italic;
+  display: inline-block;
+  margin-right: 1em;
+}
 </style>
 </head>
 <body></body>
@@ -367,7 +391,65 @@ function inspectAndReformatPage() {
     if (pageContent.startsWith('{') || pageContent.startsWith('[')) {
         try {
             const application = new Application();
+
+            application.registerSummarizer((value) => {
+                return value && /[Aa]ction/.test(value.apiType) && value.code;
+            }, (value) => {
+                return value.code;
+            });
+
+            application.registerSummarizer((value) => {
+                return value &&
+                    (
+                        (value.apiType && Object.keys(value).length === 2) ||
+                        (!value.apiType && Object.keys(value).length === 1)
+                    ) &&
+                    Object.values(value).filter(v => isArrayOrObject(v)).length === 0 &&
+                    JSON.stringify(value).length - (value.apiType?.length ?? 0) < 50;
+            }, (value) => {
+                let a, b;
+                Object.keys(value).forEach(k => {
+                    if (k !== 'apiType') {
+                        a = k;
+                        b = value[k];
+                    }
+                });
+                return a + ':' + b;
+            });
+
+            application.registerSummarizer((value) => {
+                return value && value.apiType === 'party' && value.role && value.id;
+            }, (value) => {
+                return value.role + '-' + value.id;
+            });
+
+            application.registerSummarizer((value) => {
+                return value && value.apiType === 'period' && value.numberOfUnits !== void 0 && value.timeUnit;
+            }, (value) => {
+                return value.numberOfUnits + ' ' + value.timeUnit;
+            });
+
+            application.registerSummarizer((value) => {
+                return value && value.apiType === 'anchor' && value.sourceId !== void 0 && value.sourceType;
+            }, (value) => {
+                return value.sourceType + '-' + value.sourceId;
+            });
+
+            application.registerSummarizer((value) => {
+                return value && value.apiType === 'financialAmount' && value.amount !== void 0 && value.currency;
+            }, (value) => {
+                switch (value.currency) {
+                    case 'USD':
+                        return `$${value.amount.toFixed(2).replace(/(\d)(?=(\d\d\d)+(\.\d\d)?$)/g, '$1,')}`;
+                    case 'EUR':
+                        return `€${value.amount.toFixed(2).replace(/(\d)(?=(\d\d\d)+(\.\d\d)?$)/g, '$1,')}`;
+                    default:
+                        return `${value.amount.toFixed(2).replace(/(\d)(?=(\d\d\d)+(\.\d\d)?$)/g, '$1,')} ${value.currency}`;
+                }
+            });
+
             application.init(pageContent);
+
         } catch (e) {
             // If parsing fails, it's not valid JSON, so do nothing.
             console.error("Unable to format JSON:", e);
