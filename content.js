@@ -51,7 +51,7 @@ function Application() {
     const html = el('div');
     this.el = html;
     this.breadcrumbsEl = el('div', void 0, html, {class: 'breadcrumbs'});
-    this.rootRow = el('tr', void 0, el('tbody', void 0, el('table', void 0, html)));
+    this.rootRow = el('tr', void 0, el('tbody', void 0, el('table', void 0, html, {class: 'root-table'})));
     this.columns = [];
     this.getColumn(0);//initialize the first column
 }
@@ -292,6 +292,19 @@ body {
   color: #000;
   background-color: #EEE;
   font-size: 0.8em;
+}
+.root-table {
+  margin-top: 1.5em;
+}
+.breadcrumbs {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background-color:rgb(250, 250, 250);
+  padding: 0.25em;
+  border-bottom: 1px solid #ccc;
 }
 h1 {
   margin: 0.1em 0;
