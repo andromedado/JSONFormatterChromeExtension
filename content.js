@@ -128,7 +128,7 @@ Application.prototype.loadBreadcrumbs = function (hash) {
 
 Application.prototype.renderBreadcrumbs = function () {
     const breadcrumbs = getBreadcrumbs();
-    this.breadcrumbsEl.innerText = ['$'].concat(breadcrumbs).join(' >> ');
+    this.breadcrumbsEl.innerText = ['$'].concat(breadcrumbs).join('.');
     location.hash = breadcrumbs.join('.');
 };
 
@@ -220,7 +220,7 @@ Application.prototype.consume = function (json, currentDepth) {
         } else {
             classes.push('jsoned');
             value = JSON.stringify(value);
-            if (/"\d{4}-\d{2}-\d{2}T\d\d:\d\d:\d\d\.\d{3}/.test(value)) {
+            if (/^"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)) {
                 classes.push('date');
             }
         }
@@ -409,25 +409,6 @@ function inspectAndReformatPage() {
             });
 
             application.registerSummarizer((value) => {
-                return value &&
-                    (
-                        (value.apiType && Object.keys(value).length === 2) ||
-                        (!value.apiType && Object.keys(value).length === 1)
-                    ) &&
-                    Object.values(value).filter(v => isArrayOrObject(v)).length === 0 &&
-                    JSON.stringify(value).length - (value.apiType?.length ?? 0) < 50;
-            }, (value) => {
-                let a, b;
-                Object.keys(value).forEach(k => {
-                    if (k !== 'apiType') {
-                        a = k;
-                        b = value[k];
-                    }
-                });
-                return a + ':' + b;
-            });
-
-            application.registerSummarizer((value) => {
                 return value && value.apiType === 'party' && value.role && value.id;
             }, (value) => {
                 return value.role + '-' + value.id;
@@ -457,6 +438,28 @@ function inspectAndReformatPage() {
                         return `${value.amount.toFixed(2).replace(/(\d)(?=(\d\d\d)+(\.\d\d)?$)/g, '$1,')} ${value.currency}`;
                 }
             });
+
+            const summarizeSimpleObject = (value) => {
+                let a, b;
+                Object.keys(value).forEach(k => {
+                    if (k !== 'apiType' || !a) {
+                        a = k;
+                        b = value[k];
+                    }
+                });
+                return a + ':' + b;
+            };
+
+            application.registerSummarizer((value) => {
+                return value &&
+                    (
+                        Object.keys(value).length === 1 ||
+                        (value.apiType && Object.keys(value).length === 2)
+                    ) &&
+                    Object.values(value).filter(v => isArrayOrObject(v)).length === 0 &&
+                    summarizeSimpleObject(value).length <= 30;
+            }, summarizeSimpleObject);
+
 
             application.init(pageContent);
 
