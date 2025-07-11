@@ -73,73 +73,81 @@ function Application() {
     const html = el('div');
     this.el = html;
     el('h1', 'JSON Formatted', html);
-    const breadcrumbsEl = el('div', void 0, html, {class: 'breadcrumbs'});
-
-    const rootRow = el('tr', void 0, el('tbody', void 0, el('table', void 0, html)));
-
+    this.breadcrumbsEl = el('div', void 0, html, {class: 'breadcrumbs'});
+    this.rootRow = el('tr', void 0, el('tbody', void 0, el('table', void 0, html)));
     this.columns = [];
-    this.columns.push(el('td', void 0, rootRow))
+    this.getColumn(0);//initialize the first column
+}
 
-    this.getColumn = (depth) => {
-        if (!this.columns[depth]) {
-            for (let i = this.columns.length; i <= depth; i++) {
-                this.columns.push(el('td', void 0, rootRow));
-            }
+Application.prototype.getColumn = function (depth) {
+    if (!this.columns[depth]) {
+        for (let i = this.columns.length; i <= depth; i++) {
+            this.columns.push(el('td', void 0, this.rootRow));
         }
-        return this.columns[depth];
-    };
+    }
+    return this.columns[depth];
+};
 
-    const jumpIntoCol = (columnNumber) => {
-        const visibleInactive = this.getColumn(columnNumber).querySelector('.visible tr');
-        if (visibleInactive) {
-            activate(visibleInactive);
-        }
-    };
+Application.prototype.jumpIntoCol = function (columnNumber) {
+    const visibleInactive = this.getColumn(columnNumber).querySelector('.visible tr');
+    if (visibleInactive) {
+        activate(visibleInactive);
+    }
+};
 
-    this.right = () => {
-        const active = getTip();
-        if (active) {
-            const currentColumnTable = active.closest('.json-table');
-            if (currentColumnTable) {
-                jumpIntoCol(parseInt(currentColumnTable.dataset.column, 10) + 1);
-            }
-        } else {
-            jumpIntoCol(0);
+Application.prototype.right = function () {
+    const active = getTip();
+    if (active) {
+        const currentColumnTable = active.closest('.json-table');
+        if (currentColumnTable) {
+            this.jumpIntoCol(parseInt(currentColumnTable.dataset.column, 10) + 1);
         }
-    };
+    } else {
+        this.jumpIntoCol(0);
+    }
+};
 
-    this.left = () => {
-        const active = getTip();
-        if (active) {
-            deactivate(active);
-        } else {
-            jumpIntoCol(0);
-        }
-    };
-    this.up = () => {
-        const active = getTip();
-        if (active) {
-            const prevRow = active.previousElementSibling;
-            if (prevRow) {
-                activate(prevRow);
-            }
-        } else {
-            jumpIntoCol(0);
-        }
-    };
-    this.down = () => {
-        const active = getTip();
-        if (active) {
-            const nextRow = active.nextElementSibling;
-            if (nextRow) {
-                activate(nextRow);
-            }
-        } else {
-            jumpIntoCol(0);
-        }
-    };
+Application.prototype.left = function () {
+    const active = getTip();
+    if (active) {
+        deactivate(active);
+    } else {
+        this.jumpIntoCol(0);
+    }
+};
 
-    this.keyHandler = (e) => {
+Application.prototype.up = function () {
+    const active = getTip();
+    if (active) {
+        const prevRow = active.previousElementSibling;
+        if (prevRow) {
+            activate(prevRow);
+        }
+    } else {
+        this.jumpIntoCol(0);
+    }
+};
+
+Application.prototype.down = function () {
+    const active = getTip();
+    if (active) {
+        const nextRow = active.nextElementSibling;
+        if (nextRow) {
+            activate(nextRow);
+        }
+    } else {
+        this.jumpIntoCol(0);
+    }
+};
+
+Application.prototype.keyHandler = function (e) {
+    if (e.type === 'keydown') {
+        if (['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }
+    } else {
         e.preventDefault();
         e.stopPropagation();
         if (e.key === 'ArrowRight') {
@@ -152,8 +160,7 @@ function Application() {
             this.down();
         }
         return false;
-    };
-
+    }
 };
 
 Application.prototype.consume = function (json, currentDepth) {
@@ -228,7 +235,8 @@ Application.prototype.init = function (jsonString) {
     this.consume(jsonData, 0);
     document.body.appendChild(this.el);
     document.querySelector('.json-table').classList.add('visible');
-    document.body.addEventListener('keyup', this.keyHandler);
+    document.body.addEventListener('keydown', this.keyHandler.bind(this));
+    document.body.addEventListener('keyup', this.keyHandler.bind(this));
 };
 
 Application.prototype.baseHTML = `<!DOCTYPE html>
