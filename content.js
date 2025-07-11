@@ -23,7 +23,11 @@ const el = (tag, content, parent, attrs) => {
 };
 
 function convertJSONToHtml(data) {
+
+    const application = {};
+
     const html = el('div');
+    application.html = html;
     el('h1', 'JSON Formatted', html);
     const breadcrumbsEl = el('div', void 0, html, {class: 'breadcrumbs'});
 
@@ -54,7 +58,7 @@ function convertJSONToHtml(data) {
     const deactivate = (el) => {
         el.classList.remove('active');
         if (el.dataset.childId) {
-            document.getElementById(el.dataset.childId).classList.add('none');
+            document.getElementById(el.dataset.childId).classList.remove('visible');
         }
     };
 
@@ -75,7 +79,7 @@ function convertJSONToHtml(data) {
         tr.classList.add('active');
         ancestry.forEach(el => el.classList.add('active'));
         if (tr.dataset.childId) {
-            document.getElementById(tr.dataset.childId).classList.remove('none');
+            document.getElementById(tr.dataset.childId).classList.add('visible');
         }
         document.documentElement.scrollLeft = document.documentElement.scrollWidth;
         //document.documentElement.scrollTop = 0; // too annoying i think
@@ -84,13 +88,68 @@ function convertJSONToHtml(data) {
         location.hash = breadcrumbs.join('.');
     };
 
+    const jumpIntoCol = (columnNumber) => {
+        const visibleInactive = getColumn(columnNumber).querySelector('.visible tr');
+        if (visibleInactive) {
+            activate(visibleInactive);
+        }
+    };
+
+    const getTip = () => {
+        return [].slice.call(document.querySelectorAll('.active')).pop();
+    };
+
+    application.right = () => {
+        const active = getTip();
+        if (active) {
+            const currentColumnTable = active.closest('.json-table');
+            if (currentColumnTable) {
+                jumpIntoCol(parseInt(currentColumnTable.dataset.column, 10) + 1);
+            }
+        } else {
+            jumpIntoCol(0);
+        }
+    };
+
+    application.left = () => {
+        const active = getTip();
+        if (active) {
+            deactivate(active);
+        } else {
+            jumpIntoCol(0);
+        }
+    };
+    application.up = () => {
+        const active = getTip();
+        if (active) {
+            const prevRow = active.previousElementSibling;
+            if (prevRow) {
+                activate(prevRow);
+            }
+        } else {
+            jumpIntoCol(0);
+        }
+    };
+    application.down = () => {
+        const active = getTip();
+        if (active) {
+            const nextRow = active.nextElementSibling;
+            if (nextRow) {
+                activate(nextRow);
+            }
+        } else {
+            jumpIntoCol(0);
+        }
+    };
+
     const consume = (json, currentDepth) => {
         const column = getColumn(currentDepth);
         const table = el('table', void 0, column, {class: 'json-table none'});
+        table.dataset.column = currentDepth;
         const rootBody = el('tbody', void 0, table);
 
         const addSimpleRow = (key, value, raw) => {
-            const tr = el('tr', void 0, rootBody);
+            const tr = el('tr', void 0, rootBody, {class: 'json-row'});
             if (key !== void 0) {
                 el('td', key, tr, {class: 'key'});
             }
@@ -114,7 +173,7 @@ function convertJSONToHtml(data) {
             row.classList.add('has-child');
             child.dataset.parentId = row.id;
             child.classList.add('has-parent');
-            return child;
+            return row;
         };
 
         if (Object.prototype.toString.call(json) === '[object Array]') {
@@ -126,12 +185,17 @@ function convertJSONToHtml(data) {
                 }
             }
         } else if (Object.prototype.toString.call(json) === '[object Object]') {
-            for (const [key, value] of Object.entries(json)) {
-                const valueType = Object.prototype.toString.call(value);
-                if (['[object Object]', '[object Array]'].includes(valueType)) {
-                    addRowWithChild(key, value);
-                } else {
-                    addSimpleRow(key, value);
+            const keys = Object.keys(json);
+            if (keys.length === 0) {
+                addSimpleRow(void 0, '[Empty Object]', true);
+            } else {
+                for (const [key, value] of Object.entries(json)) {
+                    const valueType = Object.prototype.toString.call(value);
+                    if (['[object Object]', '[object Array]'].includes(valueType)) {
+                        addRowWithChild(key, value);
+                    } else {
+                        addSimpleRow(key, value);
+                    }
                 }
             }
         } else {
@@ -142,7 +206,7 @@ function convertJSONToHtml(data) {
 
     consume(data, 0);
 
-    return html;
+    return application;
 }
   
 /**
@@ -185,6 +249,10 @@ h1 {
     max-width: 400px;
     border-right: 1px solid #ccc;
     margin: 0 0 1em;
+    display: none;
+}
+.json-table.visible {
+  display: table;
 }
 td {
   vertical-align: top;
@@ -218,9 +286,24 @@ td {
         document.write(newHtml);
         document.close();
 
-        const html = convertJSONToHtml(jsonData);
-        document.body.appendChild(html);
-        document.querySelector('.json-table').classList.remove('none');
+        const application = convertJSONToHtml(jsonData);
+        document.body.appendChild(application.html);
+        document.querySelector('.json-table').classList.add('visible');
+
+        document.body.addEventListener('keyup', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.key === 'ArrowRight') {
+                application.right();
+            } else if (e.key === 'ArrowLeft') {
+                application.left();
+            } else if (e.key === 'ArrowUp') {
+                application.up();
+            } else if (e.key === 'ArrowDown') {
+                application.down();
+            }
+            return false;
+        });
 
         } catch (e) {
         // If parsing fails, it's not valid JSON, so do nothing.
