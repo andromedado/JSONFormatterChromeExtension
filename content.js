@@ -22,84 +22,81 @@ const el = (tag, content, parent, attrs) => {
     return element;
 };
 
-function convertJSONToHtml(data) {
+const getTip = () => {
+    return [].slice.call(document.querySelectorAll('.active')).pop();
+};
 
-    const application = {};
+const getAncestry = (el) => {
+    let tree = [el];
+    const hasParentEl = el.closest('.has-parent');
+    if (hasParentEl) {
+        const parentEl = document.getElementById(hasParentEl.dataset.parentId);
+        tree = tree.concat(getAncestry(parentEl));
+    }
+    return tree;
+};
 
+const deactivate = (el) => {
+    el.classList.remove('active');
+    if (el.dataset.childId) {
+        document.getElementById(el.dataset.childId).classList.remove('visible');
+    }
+};
+
+const getBreadcrumbs = () => {
+    return [].slice.call(document.querySelectorAll('.active')).map(el => el.querySelector('.key')?.innerText).filter(c => !!c);
+};
+
+const activate = (tr) => {
+    const ancestry = getAncestry(tr);
+    document.querySelectorAll('.active').forEach(el => {
+        if (!ancestry.includes(el)) {
+            console.log(`ancestry does not include ${el.id}`);
+            console.log(ancestry);
+            console.log('deactivating', el.id);
+            deactivate(el);
+        }
+    });
+    tr.classList.add('active');
+    ancestry.forEach(el => el.classList.add('active'));
+    if (tr.dataset.childId) {
+        document.getElementById(tr.dataset.childId).classList.add('visible');
+    }
+    document.documentElement.scrollLeft = document.documentElement.scrollWidth;
+    //document.documentElement.scrollTop = 0; // too annoying i think
+    const breadcrumbs = getBreadcrumbs();
+    breadcrumbsEl.innerText = breadcrumbs.join(' >> ');
+    location.hash = breadcrumbs.join('.');
+};
+
+function Application() {
     const html = el('div');
-    application.html = html;
+    this.el = html;
     el('h1', 'JSON Formatted', html);
     const breadcrumbsEl = el('div', void 0, html, {class: 'breadcrumbs'});
 
     const rootRow = el('tr', void 0, el('tbody', void 0, el('table', void 0, html)));
 
-    const columns = [];
-    columns.push(el('td', void 0, rootRow))
+    this.columns = [];
+    this.columns.push(el('td', void 0, rootRow))
 
-    const getColumn = (depth) => {
-        if (!columns[depth]) {
-            for (let i = columns.length; i <= depth; i++) {
-                columns.push(el('td', void 0, rootRow));
+    this.getColumn = (depth) => {
+        if (!this.columns[depth]) {
+            for (let i = this.columns.length; i <= depth; i++) {
+                this.columns.push(el('td', void 0, rootRow));
             }
         }
-        return columns[depth];
-    };
-
-    const getAncestry = (el) => {
-        let tree = [el];
-        const hasParentEl = el.closest('.has-parent');
-        if (hasParentEl) {
-            const parentEl = document.getElementById(hasParentEl.dataset.parentId);
-            tree = tree.concat(getAncestry(parentEl));
-        }
-        return tree;
-    };
-
-    const deactivate = (el) => {
-        el.classList.remove('active');
-        if (el.dataset.childId) {
-            document.getElementById(el.dataset.childId).classList.remove('visible');
-        }
-    };
-
-    const getBreadcrumbs = () => {
-        return [].slice.call(document.querySelectorAll('.active')).map(el => el.querySelector('.key')?.innerText).filter(c => !!c);
-    };
-
-    const activate = (tr) => {
-        const ancestry = getAncestry(tr);
-        document.querySelectorAll('.active').forEach(el => {
-            if (!ancestry.includes(el)) {
-                console.log(`ancestry does not include ${el.id}`);
-                console.log(ancestry);
-                console.log('deactivating', el.id);
-                deactivate(el);
-            }
-        });
-        tr.classList.add('active');
-        ancestry.forEach(el => el.classList.add('active'));
-        if (tr.dataset.childId) {
-            document.getElementById(tr.dataset.childId).classList.add('visible');
-        }
-        document.documentElement.scrollLeft = document.documentElement.scrollWidth;
-        //document.documentElement.scrollTop = 0; // too annoying i think
-        const breadcrumbs = getBreadcrumbs();
-        breadcrumbsEl.innerText = breadcrumbs.join(' >> ');
-        location.hash = breadcrumbs.join('.');
+        return this.columns[depth];
     };
 
     const jumpIntoCol = (columnNumber) => {
-        const visibleInactive = getColumn(columnNumber).querySelector('.visible tr');
+        const visibleInactive = this.getColumn(columnNumber).querySelector('.visible tr');
         if (visibleInactive) {
             activate(visibleInactive);
         }
     };
 
-    const getTip = () => {
-        return [].slice.call(document.querySelectorAll('.active')).pop();
-    };
-
-    application.right = () => {
+    this.right = () => {
         const active = getTip();
         if (active) {
             const currentColumnTable = active.closest('.json-table');
@@ -111,7 +108,7 @@ function convertJSONToHtml(data) {
         }
     };
 
-    application.left = () => {
+    this.left = () => {
         const active = getTip();
         if (active) {
             deactivate(active);
@@ -119,7 +116,7 @@ function convertJSONToHtml(data) {
             jumpIntoCol(0);
         }
     };
-    application.up = () => {
+    this.up = () => {
         const active = getTip();
         if (active) {
             const prevRow = active.previousElementSibling;
@@ -130,7 +127,7 @@ function convertJSONToHtml(data) {
             jumpIntoCol(0);
         }
     };
-    application.down = () => {
+    this.down = () => {
         const active = getTip();
         if (active) {
             const nextRow = active.nextElementSibling;
@@ -142,89 +139,99 @@ function convertJSONToHtml(data) {
         }
     };
 
-    const consume = (json, currentDepth) => {
-        const column = getColumn(currentDepth);
-        const table = el('table', void 0, column, {class: 'json-table none'});
-        table.dataset.column = currentDepth;
-        const rootBody = el('tbody', void 0, table);
-
-        const addSimpleRow = (key, value, raw) => {
-            const tr = el('tr', void 0, rootBody, {class: 'json-row'});
-            if (key !== void 0) {
-                el('td', key, tr, {class: 'key'});
-            }
-            if (!raw) {
-                value = JSON.stringify(value);
-            }
-            el('td', value, tr, {class: 'value ' + (raw ? 'raw' : 'jsoned')});
-
-            tr.addEventListener('click', (e) => {
-                activate(tr);
-            });
-            return tr;
-        };
-
-        const addRowWithChild = (key, value) => {
-            const valueType = Object.prototype.toString.call(value);
-            const t = '[object Array]' === valueType ? '[]' : '{}';
-            const row = addSimpleRow(key, `${t}▷`, true);
-            const child = consume(value, currentDepth + 1);
-            row.dataset.childId = child.id;
-            row.classList.add('has-child');
-            child.dataset.parentId = row.id;
-            child.classList.add('has-parent');
-            return row;
-        };
-
-        if (Object.prototype.toString.call(json) === '[object Array]') {
-            if (json.length === 0) {
-                addSimpleRow(void 0, '[Empty Array]', true);
-            } else {
-                for (let i = 0; i < json.length; i++) {
-                    addRowWithChild(i, json[i]);
-                }
-            }
-        } else if (Object.prototype.toString.call(json) === '[object Object]') {
-            const keys = Object.keys(json);
-            if (keys.length === 0) {
-                addSimpleRow(void 0, '[Empty Object]', true);
-            } else {
-                for (const [key, value] of Object.entries(json)) {
-                    const valueType = Object.prototype.toString.call(value);
-                    if (['[object Object]', '[object Array]'].includes(valueType)) {
-                        addRowWithChild(key, value);
-                    } else {
-                        addSimpleRow(key, value);
-                    }
-                }
-            }
-        } else {
-            addSimpleRow(void 0, json);
+    this.keyHandler = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.key === 'ArrowRight') {
+            this.right();
+        } else if (e.key === 'ArrowLeft') {
+            this.left();
+        } else if (e.key === 'ArrowUp') {
+            this.up();
+        } else if (e.key === 'ArrowDown') {
+            this.down();
         }
-        return table;
+        return false;
     };
 
-    consume(data, 0);
+};
 
-    return application;
-}
-  
-/**
- * Main function to inspect and reformat the page content.
- */
-function inspectAndReformatPage() {
-    // Get the raw text content of the body.
-    const pageContent = document.body.innerText.trim();
+Application.prototype.consume = function (json, currentDepth) {
+    const column = this.getColumn(currentDepth);
+    const table = el('table', void 0, column, {class: 'json-table none'});
+    table.dataset.column = currentDepth;
+    const rootBody = el('tbody', void 0, table);
 
-    // Check if the content starts with an open curly bracket or an open square bracket.
-    if (pageContent.startsWith('{') || pageContent.startsWith('[')) {
-        try {
-        // Attempt to parse the content as JSON.
-        const jsonData = JSON.parse(pageContent);
+    const addSimpleRow = (key, value, raw) => {
+        const tr = el('tr', void 0, rootBody, {class: 'json-row'});
+        if (key !== void 0) {
+            el('td', key, tr, {class: 'key'});
+        }
+        if (!raw) {
+            value = JSON.stringify(value);
+        }
+        el('td', value, tr, {class: 'value ' + (raw ? 'raw' : 'jsoned')});
 
-        // Create a new HTML structure for the formatted JSON.
-        const newHtml = `
-<!DOCTYPE html>
+        tr.addEventListener('click', (e) => {
+            activate(tr);
+        });
+        return tr;
+    };
+
+    const addRowWithChild = (key, value) => {
+        const valueType = Object.prototype.toString.call(value);
+        const t = '[object Array]' === valueType ? '[]' : '{}';
+        const row = addSimpleRow(key, `${t}▷`, true);
+        const child = this.consume(value, currentDepth + 1);
+        row.dataset.childId = child.id;
+        row.classList.add('has-child');
+        child.dataset.parentId = row.id;
+        child.classList.add('has-parent');
+        return row;
+    };
+
+    if (Object.prototype.toString.call(json) === '[object Array]') {
+        if (json.length === 0) {
+            addSimpleRow(void 0, '[Empty Array]', true);
+        } else {
+            for (let i = 0; i < json.length; i++) {
+                addRowWithChild(i, json[i]);
+            }
+        }
+    } else if (Object.prototype.toString.call(json) === '[object Object]') {
+        const keys = Object.keys(json);
+        if (keys.length === 0) {
+            addSimpleRow(void 0, '[Empty Object]', true);
+        } else {
+            for (const [key, value] of Object.entries(json)) {
+                const valueType = Object.prototype.toString.call(value);
+                if (['[object Object]', '[object Array]'].includes(valueType)) {
+                    addRowWithChild(key, value);
+                } else {
+                    addSimpleRow(key, value);
+                }
+            }
+        }
+    } else {
+        addSimpleRow(void 0, json);
+    }
+    return table;
+};
+
+Application.prototype.init = function (jsonString) {
+    const jsonData = JSON.parse(jsonString);
+
+    document.open();
+    document.write(this.baseHTML);
+    document.close();
+
+    this.consume(jsonData, 0);
+    document.body.appendChild(this.el);
+    document.querySelector('.json-table').classList.add('visible');
+    document.body.addEventListener('keyup', this.keyHandler);
+};
+
+Application.prototype.baseHTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -278,36 +285,23 @@ td {
 </style>
 </head>
 <body></body>
-</html>
-`;
+</html>`;
 
-        // Replace the entire document's HTML with the new formatted content.
-        document.open();
-        document.write(newHtml);
-        document.close();
+/**
+ * Main function to inspect and reformat the page content.
+ */
+function inspectAndReformatPage() {
+    // Get the raw text content of the body.
+    const pageContent = document.body.innerText.trim();
 
-        const application = convertJSONToHtml(jsonData);
-        document.body.appendChild(application.html);
-        document.querySelector('.json-table').classList.add('visible');
-
-        document.body.addEventListener('keyup', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (e.key === 'ArrowRight') {
-                application.right();
-            } else if (e.key === 'ArrowLeft') {
-                application.left();
-            } else if (e.key === 'ArrowUp') {
-                application.up();
-            } else if (e.key === 'ArrowDown') {
-                application.down();
-            }
-            return false;
-        });
-
+    // Check if the content starts with an open curly bracket or an open square bracket.
+    if (pageContent.startsWith('{') || pageContent.startsWith('[')) {
+        try {
+            const application = new Application();
+            application.init(pageContent);
         } catch (e) {
-        // If parsing fails, it's not valid JSON, so do nothing.
-        console.error("Content starts with [ or { but is not valid JSON:", e);
+            // If parsing fails, it's not valid JSON, so do nothing.
+            console.error("Unable to format JSON:", e);
         }
     }
 }
