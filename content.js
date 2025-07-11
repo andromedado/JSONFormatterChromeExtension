@@ -214,10 +214,17 @@ Application.prototype.consume = function (json, currentDepth) {
         if (key !== void 0) {
             el('td', key, tr, {class: 'key'});
         }
-        if (!raw) {
+        let classes = ['value'];
+        if (raw) {
+            classes.push('raw');
+        } else {
+            classes.push('jsoned');
             value = JSON.stringify(value);
+            if (/"\d{4}-\d{2}-\d{2}T\d\d:\d\d:\d\d\.\d{3}/.test(value)) {
+                classes.push('date');
+            }
         }
-        el('td', value, tr, {class: 'value ' + (raw ? 'raw' : 'jsoned')});
+        el('td', value, tr, {class: classes.join(' ')});
 
         tr.addEventListener('click', (e) => {
             this.activate(tr);
@@ -374,6 +381,9 @@ td {
   font-style: italic;
   display: inline-block;
   margin-right: 1em;
+}
+.date {
+  white-space: nowrap;
 }
 </style>
 </head>
