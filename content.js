@@ -328,6 +328,10 @@ td {
   background-color: #FFF9C4;
   color: #000;
 }
+.active ::selection {
+  background-color:rgb(255, 185, 87);
+  color: #000;
+}
 .jsoned {
   color:rgb(185, 97, 97);
 }
