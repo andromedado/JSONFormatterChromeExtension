@@ -44,7 +44,14 @@ const deactivate = (el) => {
 };
 
 const getBreadcrumbs = () => {
-    return [].slice.call(document.querySelectorAll('.active')).map(el => el.querySelector('.key')?.innerText).filter(c => !!c);
+    const core = [].slice.call(document.querySelectorAll('.active')).map(el => {
+        const rawKey = el.querySelector('.key')?.innerText;
+        if (el.closest('.json-table').dataset.isArrayElement + '' === '1') {
+            return `[${rawKey}]`;
+        }
+        return rawKey;
+    }).filter(c => !!c);
+    return [''].concat(core).join('.');
 };
 
 const isArrayOrObject = (value) => {
@@ -99,7 +106,7 @@ Application.prototype.activate = function (tr) {
 };
 
 Application.prototype.loadBreadcrumbs = function (hash) {
-    const breadcrumbs = hash.split('.');
+    const breadcrumbs = hash.replace(/\[|\]/g, '').split('.');
     let elementToActivate = null;
     for (let i = 0; i < breadcrumbs.length; i++) {
         let queryRoot;
@@ -128,8 +135,8 @@ Application.prototype.loadBreadcrumbs = function (hash) {
 
 Application.prototype.renderBreadcrumbs = function () {
     const breadcrumbs = getBreadcrumbs();
-    this.breadcrumbsEl.innerText = ['$'].concat(breadcrumbs).join('.');
-    location.hash = breadcrumbs.join('.');
+    this.breadcrumbsEl.innerText = breadcrumbs
+    location.hash = breadcrumbs;
 };
 
 
@@ -234,7 +241,8 @@ Application.prototype.consume = function (json, currentDepth) {
 
     const addRowWithChild = (key, value) => {
         const valueType = Object.prototype.toString.call(value);
-        const t = '[object Array]' === valueType ? `[${value.length}]` : '{}';//`{${Object.keys(value).length}}`;
+        const isArray = '[object Array]' === valueType;
+        const t = isArray ? `[${value.length}]` : '{}';//`{${Object.keys(value).length}}`;
         const karat = el('span');
 
         for (const summarizer of this.summarizers) {
@@ -250,6 +258,7 @@ Application.prototype.consume = function (json, currentDepth) {
         row.dataset.childId = child.id;
         row.classList.add('has-child');
         child.dataset.parentId = row.id;
+        child.dataset.isArrayElement = isArray ? '1' : '0';
         child.classList.add('has-parent');
         return row;
     };
@@ -294,7 +303,7 @@ Application.prototype.init = function (jsonString) {
     document.body.addEventListener('keydown', this.keyHandler.bind(this));
     document.body.addEventListener('keyup', this.keyHandler.bind(this));
 
-    const hash = (location.hash + '').trim().replace(/^#/, '');
+    const hash = (location.hash + '').trim().replace(/^#\.?/, '');
     if (hash) {
         this.loadBreadcrumbs(hash);
     } else {
