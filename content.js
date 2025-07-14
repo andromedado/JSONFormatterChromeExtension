@@ -72,7 +72,9 @@ function Application() {
 Application.prototype.getColumn = function (depth) {
     if (!this.columns[depth]) {
         for (let i = this.columns.length; i <= depth; i++) {
-            this.columns.push(el('td', void 0, this.rootRow));
+            const contentCell = el('td', void 0, this.rootRow, {class: 'json-table-content'});
+            this.columns.push(contentCell);
+            const anchorCell = el('td', void 0, this.rootRow, {class: 'json-table-anchor'});
         }
     }
     return this.columns[depth];
@@ -328,6 +330,9 @@ body {
   background-color: #EEE;
   font-size: 0.8em;
 }
+table {
+  border-collapse: collapse;
+}
 .root-table {
   margin-top: 1.5em;
 }
@@ -349,11 +354,14 @@ h1 {
   display: none;
 }
 .json-table {
-    border-collapse: collapse;
     max-width: 400px;
-    border-right: 1px solid #ccc;
     margin: 0 0 1em;
     display: none;
+}
+.json-table-anchor {
+    cursor: ew-resize;
+    width: 1px;
+    background-color: #ccc;
 }
 .json-table.visible {
   display: table;
