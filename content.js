@@ -44,7 +44,7 @@ const deactivate = (el) => {
         if (resizedParent) {
             // release resizing
             resizedParent.classList.remove('resized');
-            resizedParent.style = void 0;
+            resizedParent.querySelector('.sizer').style = void 0;
         }
     }
 };
@@ -79,6 +79,7 @@ Application.prototype.getColumn = function (depth) {
     if (!this.columns[depth]) {
         for (let i = this.columns.length; i <= depth; i++) {
             const contentCell = el('div', void 0, this.rootRow, {class: 'json-table-content'});
+            el('div', void 0, contentCell, {class: 'sizer'});
             this.columns.push(contentCell);
             const anchorCell = el('div', void 0, this.rootRow, {class: 'json-table-anchor'});
             anchorCell.addEventListener('mousedown', this.anchorMouseDownHandler.bind(this));
@@ -305,7 +306,7 @@ Application.prototype.mouseMoveHandler = function (e) {
     let info = `X: ${this.mouseX}, Y: ${this.mouseY}`;
     if (this.dragging && !!e.buttons) {
         const delta = this.mouseX - this.dragging.initialX;
-        const newWidth = Math.max(10, this.dragging.initialWidth + delta);
+        const newWidth = Math.max(1, this.dragging.initialWidth + delta);
         this.dragging.target.style.width = newWidth + 'px';
         info += `, delta: ${delta} against ${this.dragging.target.id}`;
     } else {
@@ -316,11 +317,11 @@ Application.prototype.mouseMoveHandler = function (e) {
 
 Application.prototype.anchorMouseDownHandler = function (e) {
     this.dragging = {
-        target: e.target.previousElementSibling,
+        target: e.target.previousElementSibling.querySelector('.sizer'),
         initialX: this.mouseX,
         initialWidth: e.target.previousElementSibling.offsetWidth,
     };
-    this.dragging.target.classList.add('resized');
+    e.target.previousElementSibling.classList.add('resized');
     e.preventDefault();
     e.stopPropagation();
     return false;
