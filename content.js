@@ -69,7 +69,7 @@ function Application() {
     const html = el('div');
     this.el = html;
     this.breadcrumbsEl = el('div', void 0, html, {class: 'breadcrumbs'});
-    this.rootRow = el('tr', void 0, el('tbody', void 0, el('table', void 0, html, {class: 'root-table'})));
+    this.rootRow = el('div', void 0, html, {class: 'root-table root-row'});
     this.columns = [];
     this.summarizers = [];
     this.getColumn(0);//initialize the first column
@@ -78,9 +78,9 @@ function Application() {
 Application.prototype.getColumn = function (depth) {
     if (!this.columns[depth]) {
         for (let i = this.columns.length; i <= depth; i++) {
-            const contentCell = el('td', void 0, this.rootRow, {class: 'json-table-content'});
+            const contentCell = el('div', void 0, this.rootRow, {class: 'json-table-content'});
             this.columns.push(contentCell);
-            const anchorCell = el('td', void 0, this.rootRow, {class: 'json-table-anchor'});
+            const anchorCell = el('div', void 0, this.rootRow, {class: 'json-table-anchor'});
             anchorCell.addEventListener('mousedown', this.anchorMouseDownHandler.bind(this));
         }
     }
@@ -399,9 +399,17 @@ h1 {
     display: none;
     width:100%;
 }
+.root-row {
+    display: table;
+}
+.json-table-content, .json-table-anchor {
+    display: table-cell;
+    height: 100%;
+}
 .json-table-anchor {
     cursor: ew-resize;
-    width: 1px;
+    width: 2px;
+    min-width: 2px;
     background-color: #ccc;
 }
 .json-table.visible {
