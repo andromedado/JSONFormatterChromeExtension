@@ -40,6 +40,12 @@ const deactivate = (el) => {
     el.classList.remove('active');
     if (el.dataset.childId) {
         document.getElementById(el.dataset.childId).classList.remove('visible');
+        const resizedParent = document.getElementById(el.dataset.childId).closest('.resized');
+        if (resizedParent) {
+            // release resizing
+            resizedParent.classList.remove('resized');
+            resizedParent.style = void 0;
+        }
     }
 };
 
@@ -75,6 +81,7 @@ Application.prototype.getColumn = function (depth) {
             const contentCell = el('td', void 0, this.rootRow, {class: 'json-table-content'});
             this.columns.push(contentCell);
             const anchorCell = el('td', void 0, this.rootRow, {class: 'json-table-anchor'});
+            anchorCell.addEventListener('mousedown', this.anchorMouseDownHandler.bind(this));
         }
     }
     return this.columns[depth];
@@ -292,6 +299,37 @@ Application.prototype.consume = function (json, currentDepth) {
     return table;
 };
 
+Application.prototype.mouseMoveHandler = function (e) {
+    this.mouseX = e.clientX;
+    this.mouseY = e.clientY;
+    let info = `X: ${this.mouseX}, Y: ${this.mouseY}`;
+    if (this.dragging && !!e.buttons) {
+        const delta = this.mouseX - this.dragging.initialX;
+        const newWidth = Math.max(10, this.dragging.initialWidth + delta);
+        this.dragging.target.style.width = newWidth + 'px';
+        info += `, delta: ${delta} against ${this.dragging.target.id}`;
+    } else {
+        this.dragging = null;
+    }
+    document.getElementById('mouse-position').innerText = info;
+};
+
+Application.prototype.anchorMouseDownHandler = function (e) {
+    this.dragging = {
+        target: e.target.previousElementSibling,
+        initialX: this.mouseX,
+        initialWidth: e.target.previousElementSibling.offsetWidth,
+    };
+    this.dragging.target.classList.add('resized');
+    e.preventDefault();
+    e.stopPropagation();
+    return false;
+};
+
+Application.prototype.mouseUpHandler = function (e) {
+    this.dragging = null;
+};
+
 Application.prototype.init = function (jsonString) {
     const jsonData = JSON.parse(jsonString);
 
@@ -311,6 +349,9 @@ Application.prototype.init = function (jsonString) {
     } else {
         this.renderBreadcrumbs();
     }
+
+    document.body.addEventListener('mousemove', this.mouseMoveHandler.bind(this));
+    document.body.addEventListener('mouseup', this.mouseUpHandler.bind(this));
 };
 
 Application.prototype.registerSummarizer = function (predicate, summarize) {
@@ -354,9 +395,9 @@ h1 {
   display: none;
 }
 .json-table {
-    max-width: 400px;
     margin: 0 0 1em;
     display: none;
+    width:100%;
 }
 .json-table-anchor {
     cursor: ew-resize;
@@ -402,9 +443,18 @@ td {
 .date {
   white-space: nowrap;
 }
+#mouse-position {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  z-index: 1000;
+  background-color: #EEE;
+}
 </style>
 </head>
-<body></body>
+<body>
+<div id="mouse-position"></div>
+</body>
 </html>`;
 
 /**
