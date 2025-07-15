@@ -431,7 +431,7 @@ h1 {
 .json-table-content {
   padding-top: 1.5em;
 }
-.json-table-content .sizer {
+.json-table-content.visible .sizer {
   min-width: 5em;
 }
 .json-table-anchor .sizer {
