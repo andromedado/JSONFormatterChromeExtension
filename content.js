@@ -40,6 +40,7 @@ const deactivate = (el) => {
     el.classList.remove('active');
     if (el.dataset.childId) {
         document.getElementById(el.dataset.childId).classList.remove('visible');
+        document.getElementById(el.dataset.childId).closest('.json-table-content').classList.remove('visible');
         const resizedParent = document.getElementById(el.dataset.childId).closest('.resized');
         if (resizedParent) {
             // release resizing
@@ -69,7 +70,7 @@ function Application() {
     const html = el('div');
     this.el = html;
     this.breadcrumbsEl = el('div', void 0, html, {class: 'breadcrumbs'});
-    this.rootRow = el('div', void 0, html, {class: 'root-table root-row'});
+    this.rootRow = el('tr', void 0, el('tbody', void 0, el('table', void 0, html, {class: 'root-table'})));
     this.columns = [];
     this.summarizers = [];
     this.getColumn(0);//initialize the first column
@@ -78,10 +79,10 @@ function Application() {
 Application.prototype.getColumn = function (depth) {
     if (!this.columns[depth]) {
         for (let i = this.columns.length; i <= depth; i++) {
-            const contentCell = el('div', void 0, this.rootRow, {class: 'json-table-content'});
+            const contentCell = el('td', void 0, this.rootRow, {class: 'json-table-content'});
             el('div', void 0, contentCell, {class: 'sizer'});
             this.columns.push(contentCell);
-            const anchorCell = el('div', void 0, this.rootRow, {class: 'json-table-anchor'});
+            const anchorCell = el('td', void 0, this.rootRow, {class: 'json-table-anchor'});
             anchorCell.addEventListener('mousedown', this.anchorMouseDownHandler.bind(this));
         }
     }
@@ -89,7 +90,7 @@ Application.prototype.getColumn = function (depth) {
 };
 
 Application.prototype.jumpIntoCol = function (columnNumber) {
-    const visibleInactive = this.getColumn(columnNumber).querySelector('.visible tr');
+    const visibleInactive = this.getColumn(columnNumber).querySelector('.json-table.visible tr');
     if (visibleInactive) {
         this.activate(visibleInactive);
     }
@@ -105,9 +106,11 @@ Application.prototype.activate = function (tr) {
     ancestry.forEach(el => {
         el.classList.add('active');
         el.closest('.json-table').classList.add('visible');
+        el.closest('.json-table-content').classList.add('visible');
     });
     if (tr.dataset.childId) {
         document.getElementById(tr.dataset.childId).classList.add('visible');
+        document.getElementById(tr.dataset.childId).closest('.json-table-content').classList.add('visible');
     }
     document.documentElement.scrollLeft = document.documentElement.scrollWidth;
     //document.documentElement.scrollTop = 0; // too annoying i think
@@ -400,18 +403,15 @@ h1 {
     display: none;
     width:100%;
 }
-.root-row {
-    display: table;
-}
-.json-table-content, .json-table-anchor {
-    display: table-cell;
-    height: 100%;
-}
 .json-table-anchor {
     cursor: ew-resize;
     width: 2px;
     min-width: 2px;
     background-color: #ccc;
+    display: none;
+}
+.visible + .json-table-anchor {
+  display: table-cell;
 }
 .json-table.visible {
   display: table;
