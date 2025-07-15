@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "JSON Formatter",
   "version": "1.0",
-  "description": "Formats pages that start with a curly or square bracket as HTML.",
+  "description": "Formats JSON as Finder-style navigable HTML.",
   "permissions": [
     "activeTab",
     "scripting"
