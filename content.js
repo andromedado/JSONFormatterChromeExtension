@@ -58,7 +58,7 @@ const getBreadcrumbs = () => {
         }
         return rawKey;
     }).filter(c => !!c);
-    return [''].concat(core).join('.');
+    return [''].concat(core).join('.') || '.';
 };
 
 const isArrayOrObject = (value) => {
@@ -300,6 +300,12 @@ Application.prototype.consume = function (json, currentDepth) {
     } else {
         addSimpleRow(void 0, json);
     }
+
+    if (currentDepth === 0) {
+        // we've finished consuming all!
+        const rightPaddingDiv = el('div', void 0, el('td', void 0, this.rootRow), {class: 'right-padding'});
+    }
+
     return table;
 };
 
@@ -315,7 +321,10 @@ Application.prototype.mouseMoveHandler = function (e) {
     } else {
         this.dragging = null;
     }
-    document.getElementById('mouse-position').innerText = info;
+    const debugEl = document.getElementById('mouse-position');
+    if (debugEl) {
+        debugEl.innerText = info;
+    }
 };
 
 Application.prototype.anchorMouseDownHandler = function (e) {
@@ -343,7 +352,10 @@ Application.prototype.init = function (jsonString) {
 
     this.consume(jsonData, 0);
     document.body.appendChild(this.el);
+
     document.querySelector('.json-table').classList.add('visible');
+    document.querySelector('.json-table-content').classList.add('visible');
+
     document.body.addEventListener('keydown', this.keyHandler.bind(this));
     document.body.addEventListener('keyup', this.keyHandler.bind(this));
 
@@ -459,10 +471,13 @@ td {
   z-index: 1000;
   background-color: #EEE;
 }
+.right-padding {
+  width: 150px;
+}
 </style>
 </head>
 <body>
-<div id="mouse-position"></div>
+<!-- <div id="mouse-position"></div> -->
 </body>
 </html>`;
 
