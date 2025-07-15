@@ -83,6 +83,7 @@ Application.prototype.getColumn = function (depth) {
             el('div', void 0, contentCell, {class: 'sizer'});
             this.columns.push(contentCell);
             const anchorCell = el('td', void 0, this.rootRow, {class: 'json-table-anchor'});
+            el('div', void 0, anchorCell, {class: 'sizer'});
             anchorCell.addEventListener('mousedown', this.anchorMouseDownHandler.bind(this));
         }
     }
@@ -328,12 +329,13 @@ Application.prototype.mouseMoveHandler = function (e) {
 };
 
 Application.prototype.anchorMouseDownHandler = function (e) {
+    const target = e.target.closest('.json-table-anchor').previousElementSibling;
     this.dragging = {
-        target: e.target.previousElementSibling.querySelector('.sizer'),
+        target: target.querySelector('.sizer'),
         initialX: this.mouseX,
-        initialWidth: e.target.previousElementSibling.offsetWidth,
+        initialWidth: target.offsetWidth,
     };
-    e.target.previousElementSibling.classList.add('resized');
+    target.classList.add('resized');
     e.preventDefault();
     e.stopPropagation();
     return false;
@@ -390,9 +392,6 @@ body {
 table {
   border-collapse: collapse;
 }
-.root-table {
-  margin-top: 1.5em;
-}
 .breadcrumbs {
   position: fixed;
   top: 0;
@@ -400,7 +399,7 @@ table {
   right: 0;
   z-index: 1000;
   background-color:rgb(250, 250, 250);
-  padding: 0.25em;
+  padding: 0.15em 1em;
   border-bottom: 1px solid #ccc;
 }
 h1 {
@@ -421,12 +420,22 @@ h1 {
     min-width: 2px;
     background-color: #ccc;
     display: none;
+    padding:0;
 }
 .visible + .json-table-anchor {
   display: table-cell;
 }
 .json-table.visible {
   display: table;
+}
+.json-table-content {
+  padding-top: 1.5em;
+}
+.json-table-content .sizer {
+  min-width: 5em;
+}
+.json-table-anchor .sizer {
+  height: 100vh;
 }
 td {
   vertical-align: top;
