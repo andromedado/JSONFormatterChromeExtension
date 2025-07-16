@@ -66,6 +66,85 @@ const isArrayOrObject = (value) => {
     return ['[object Object]', '[object Array]'].includes(valueType);
 };
 
+function Finder(application) {
+    this.application = application;
+    this.el = el('div', void 0, document.body, {class: 'finder none'});
+    const p = el('p', void 0, this.el);
+    this.input = el('input', void 0, p, {type: 'text'});
+    this.resultCounter = el('span', void 0, p, {class: 'result-counter none'});
+    this.closeEl = el('span', '❌', p, {class: 'close'});
+    this.closeEl.addEventListener('click', this.close.bind(this));
+    this.noResults = el('p', 'No results found', this.el, {class: 'no-results none'});
+
+    this.input.addEventListener('keyup', (e) => {
+        if (e.key === 'Enter') {
+            this.find(e.shiftKey);
+        } else if (['shiftKey', 'ctrlKey', 'metaKey'].includes(e.key)) {
+            // ignore
+        } else if (e.key === 'Escape') {
+            this.close();
+        } else {
+            this.noResults.classList.add('none');
+            this.resultCounter.classList.add('none');
+        }
+    });
+
+    this.active = false;
+}
+
+Finder.prototype.find = function (reverse) {
+    this.query = (this.input.value + '').trim();
+    if (!this.query) {
+        this.close();
+        return;
+    }
+    if (this.query !== this.activeQuery) {
+        this.activeQuery = this.query;
+        const matchingKeys = Object.keys(this.application.lookup).filter(key => {
+            return key.toLowerCase().includes(this.query.toLowerCase());
+        });
+        this.resultSet = matchingKeys.map(key => this.application.lookup[key]).flat();
+        this.index = 0;
+    } else {
+        this.index = (this.index + (reverse ? -1 : 1) + this.resultSet.length) % this.resultSet.length;
+    }
+    if (this.resultSet.length > 0) {
+        this.noResults.classList.add('none');
+        this.resultCounter.classList.remove('none');
+        this.resultCounter.innerText = `${this.index + 1}/${this.resultSet.length}`;
+        this.application.activate(this.resultSet[this.index]);
+    } else {
+        this.noResults.classList.remove('none');
+        this.resultCounter.classList.add('none');
+    }
+};
+
+Finder.prototype.close = function () {
+    this.el.classList.add('none');
+    this.noResults.classList.add('none');
+    this.resultCounter.classList.add('none');
+    this.activeQuery = null;
+    this.active = false;
+};
+
+Finder.prototype.init = function () {
+    document.body.appendChild(this.el);
+    document.body.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+            if (this.active) {
+                this.close();
+            } else {
+                this.active = true;
+                e.preventDefault();
+                e.stopPropagation();
+                this.el.classList.remove('none');
+                this.input.focus();
+                return false;
+            }
+        }
+    });
+}
+
 function Application() {
     const html = el('div');
     this.el = html;
@@ -223,6 +302,14 @@ Application.prototype.keyHandler = function (e) {
     }
 };
 
+Application.prototype.addLookup = function (value, tr) {
+    if (value && !(/^\d+$/.test(value))) {
+        value = value.toString();
+        this.lookup[value] = this.lookup[value] || [];
+        this.lookup[value].push(tr);
+    }
+};
+
 Application.prototype.consume = function (json, currentDepth) {
     const column = this.getColumn(currentDepth);
     const table = el('table', void 0, column, {class: 'json-table none'});
@@ -250,6 +337,10 @@ Application.prototype.consume = function (json, currentDepth) {
         tr.addEventListener('click', (e) => {
             this.activate(tr);
         });
+        this.addLookup(key, tr);
+        if (!raw) {
+            this.addLookup(value, tr);
+        }
         return tr;
     };
 
@@ -304,7 +395,7 @@ Application.prototype.consume = function (json, currentDepth) {
 
     if (currentDepth === 0) {
         // we've finished consuming all!
-        const rightPaddingDiv = el('div', void 0, el('td', void 0, this.rootRow), {class: 'right-padding'});
+        this.rightPaddingDiv = el('div', void 0, el('td', void 0, this.rootRow), {class: 'right-padding'});
     }
 
     return table;
@@ -352,6 +443,7 @@ Application.prototype.init = function (jsonString) {
     document.write(this.baseHTML);
     document.close();
 
+    this.lookup = {};
     this.consume(jsonData, 0);
     document.body.appendChild(this.el);
 
@@ -370,6 +462,9 @@ Application.prototype.init = function (jsonString) {
 
     document.body.addEventListener('mousemove', this.mouseMoveHandler.bind(this));
     document.body.addEventListener('mouseup', this.mouseUpHandler.bind(this));
+
+    this.finder = new Finder(this);
+    this.finder.init();
 };
 
 Application.prototype.registerSummarizer = function (predicate, summarize) {
@@ -392,6 +487,45 @@ body {
 }
 table {
   border-collapse: collapse;
+}
+.finder {
+  position: fixed;
+  top: 0;
+  right: 2em;
+  width: 20em;
+  z-index: 1000;
+  background-color: #FFF;
+  padding: 0.5em;
+  border: 1px solid #ccc;
+  border-top: none;
+}
+.finder p {
+  margin: 0.25em 0;
+}
+.finder input {
+  width: 90%;
+  box-sizing: border-box;
+  background-color: #FFF;
+  display:inline-block;
+  color: #000;
+  border-radius: 0px;
+  outline: none;
+}
+.finder .result-counter {
+  position: absolute;
+  width: 85%;
+  left: 0;
+  margin-top: 0.25em;
+  text-align: right;
+}
+.finder .close {
+  width: 10%;
+  cursor: pointer;
+  text-align: right;
+  display:inline-block;
+}
+.finder .no-results {
+  font-style: italic;
 }
 .breadcrumbs {
   position: fixed;
