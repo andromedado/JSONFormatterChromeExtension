@@ -79,7 +79,7 @@ function Finder(application) {
     this.input.addEventListener('keyup', (e) => {
         if (e.key === 'Enter') {
             this.find(e.shiftKey);
-        } else if (['shiftKey', 'ctrlKey', 'metaKey'].includes(e.key)) {
+        } else if (['Shift', 'Control', 'Meta', 'Alt'].includes(e.key)) {
             // ignore
         } else if (e.key === 'Escape') {
             this.close();
