@@ -61,9 +61,18 @@ const getBreadcrumbs = () => {
     return [''].concat(core).join('.') || '.';
 };
 
-const isArrayOrObject = (value) => {
+const isArray = (value) => {
     const valueType = Object.prototype.toString.call(value);
-    return ['[object Object]', '[object Array]'].includes(valueType);
+    return '[object Array]' === valueType;
+};
+
+const isObject = (value) => {
+    const valueType = Object.prototype.toString.call(value);
+    return '[object Object]' === valueType;
+};
+
+const isArrayOrObject = (value) => {
+    return isArray(value) || isObject(value);
 };
 
 function Finder(application) {
@@ -316,7 +325,7 @@ Application.prototype.consume = function (json, currentDepth) {
     table.dataset.column = currentDepth;
     const rootBody = el('tbody', void 0, table);
 
-    const addSimpleRow = (key, value, raw) => {
+    const addSimpleRow = (key, value, raw, omitFromLookup) => {
         const tr = el('tr', void 0, rootBody, {class: 'json-row'});
         tr.dataset.key = key;
         if (key !== void 0) {
@@ -337,17 +346,18 @@ Application.prototype.consume = function (json, currentDepth) {
         tr.addEventListener('click', (e) => {
             this.activate(tr);
         });
-        this.addLookup(key, tr);
-        if (!raw) {
-            this.addLookup(value, tr);
+        if (!omitFromLookup) {
+            this.addLookup(key, tr);
+            if (!raw) {
+                this.addLookup(value, tr);
+            }
         }
         return tr;
     };
 
-    const addRowWithChild = (key, value) => {
-        const valueType = Object.prototype.toString.call(value);
-        const isArray = '[object Array]' === valueType;
-        const t = isArray ? `[${value.length}]` : '{}';//`{${Object.keys(value).length}}`;
+    const addRowWithChild = (key, value, omitFromLookup) => {
+        const valueIsArray = isArray(value);
+        const childTypeHint = valueIsArray ? `[${value.length}]` : '{}';//`{${Object.keys(value).length}}`;
         const karat = el('span');
 
         for (const summarizer of this.summarizers) {
@@ -356,30 +366,30 @@ Application.prototype.consume = function (json, currentDepth) {
                 break;
             }
         }
-        el('span', `${t}▷`, karat, {class: 'karat-icon'});
+        el('span', `${childTypeHint}▷`, karat, {class: 'karat-icon'});
 
-        const row = addSimpleRow(key, karat, true);
+        const row = addSimpleRow(key, karat, true, omitFromLookup);
         const child = this.consume(value, currentDepth + 1);
         row.dataset.childId = child.id;
         row.classList.add('has-child');
         child.dataset.parentId = row.id;
-        child.dataset.isArrayElement = isArray ? '1' : '0';
+        child.dataset.isArrayElement = valueIsArray ? '1' : '0';
         child.classList.add('has-parent');
         return row;
     };
 
-    if (Object.prototype.toString.call(json) === '[object Array]') {
+    if (isArray(json)) {
         if (json.length === 0) {
-            addSimpleRow(void 0, '[Empty Array]', true);
+            addSimpleRow(void 0, '[Empty Array]', true, true);
         } else {
             for (let i = 0; i < json.length; i++) {
-                addRowWithChild(i, json[i]);
+                addRowWithChild(i, json[i], true);
             }
         }
-    } else if (Object.prototype.toString.call(json) === '[object Object]') {
+    } else if (isObject(json)) {
         const keys = Object.keys(json);
         if (keys.length === 0) {
-            addSimpleRow(void 0, '[Empty Object]', true);
+            addSimpleRow(void 0, '[Empty Object]', true, true);
         } else {
             for (const [key, value] of Object.entries(json)) {
                 if (isArrayOrObject(value)) {
