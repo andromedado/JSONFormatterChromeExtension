@@ -303,8 +303,8 @@ Application.prototype.keyHandler = function (e) {
 };
 
 Application.prototype.addLookup = function (value, tr) {
-    if (value && !(/^\d+$/.test(value))) {
-        value = value.toString();
+    if (value !== void 0) {
+        value = value + '';
         this.lookup[value] = this.lookup[value] || [];
         this.lookup[value].push(tr);
     }
