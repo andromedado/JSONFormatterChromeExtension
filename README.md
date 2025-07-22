@@ -74,4 +74,4 @@ The configuration uses an array of objects with `predicates` and `summarizers`:
 4. Click "Load unpacked" and select the extension directory
 5. The extension will now be available in your browser
 
-### Inspired by [JSON Finder](https://chromewebstore.google.com/detail/json-finder/flhdcaebggmmpnnaljiajhihdfconkbj)
+### Inspired by [JSON Finder](https://github.com/rapee/jsonfinder)
