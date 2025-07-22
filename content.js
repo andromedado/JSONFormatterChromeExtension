@@ -1,5 +1,64 @@
 // content.js - This script runs on every page to check and reformat content.
 
+// Default configuration that will be used if no custom config is found
+const DEFAULT_SUMMARIZE_CONFIGS = [
+    {
+        predicates: [
+            {type: 'keysPresent', keys: ['apiType', 'code']},
+            {type: 'valueRegex', key: 'apiType', regex: '[Aa]ction'}
+        ],
+        summarizer: {type: 'keyValue', key: 'code'}
+    },
+    {
+        predicates: [
+            {type: 'keysPresent', keys: ['apiType', 'role', 'id']},
+            {type: 'valueRegex', key: 'apiType', regex: '[Pp]arty'}
+        ],
+        summarizer: {type: 'joinedValues', keys: ['role', 'id']}
+    },
+    {
+        predicates: [
+            {type: 'keysPresent', keys: ['apiType', 'numberOfUnits', 'timeUnit']},
+            {type: 'valueRegex', key: 'apiType', regex: '[Pp]eriod'}
+        ],
+        summarizer: {type: 'joinedValues', keys: ['numberOfUnits', 'timeUnit'], joiner: ' '}
+    },
+    {
+        predicates: [
+            {type: 'keysPresent', keys: ['apiType', 'sourceId', 'sourceType']},
+            {type: 'valueRegex', key: 'apiType', regex: '[Aa]nchor'}
+        ],
+        summarizer: {type: 'joinedValues', keys: ['sourceType', 'sourceId']}
+    },
+    {
+        predicates: [
+            {type: 'keysPresent', keys: ['apiType', 'amount', 'currency']},
+            {type: 'valueRegex', key: 'apiType', regex: '[Ff]inancial'}
+        ],
+        summarizer: {type: 'financialAmount', amountKey: 'amount', currencyKey: 'currency'}
+    },
+    {
+        predicates: [
+            {type: 'simpleObject', keysToIgnore: ['apiType']}
+        ],
+        summarizer: {type: 'simpleObject', keysToIgnore: ['apiType']}
+    }
+];
+
+// Function to load configuration from storage
+function loadSummarizeConfigs() {
+    return new Promise((resolve) => {
+        chrome.storage.sync.get(['summarizeConfigs'], function(result) {
+            if (result.summarizeConfigs && Array.isArray(result.summarizeConfigs)) {
+                summarizeConfigs = result.summarizeConfigs;
+            } else {
+                summarizeConfigs = DEFAULT_SUMMARIZE_CONFIGS;
+            }
+            resolve(summarizeConfigs);
+        });
+    });
+}
+
 let id = 1;
 const el = (tag, content, parent, attrs) => {
     const element = document.createElement(tag);
@@ -361,8 +420,8 @@ Application.prototype.consume = function (json, currentDepth) {
         const karat = el('span');
 
         for (const summarizer of this.summarizers) {
-            if (summarizer.predicate(value)) {
-                el('span', summarizer.summarize(value), karat, {class: 'summary'});
+            if (summarizer.predicates.every(predicate => predicate.test(value))) {
+                el('span', summarizer.summarizer.summarize(value), karat, {class: 'summary'});
                 break;
             }
         }
@@ -477,8 +536,14 @@ Application.prototype.init = function (jsonString) {
     this.finder.init();
 };
 
-Application.prototype.registerSummarizer = function (predicate, summarize) {
-    this.summarizers.push({predicate, summarize});
+Application.prototype.registerSummarizer = function (summarizer, predicates) {
+    if (!predicates || predicates.length === 0) {
+        throw new Error('predicates is required');
+    }
+    if (!summarizer) {
+        throw new Error('summarizer is required');
+    }
+    this.summarizers.push({summarizer, predicates});
 };
 
 Application.prototype.baseHTML = `<!DOCTYPE html>
@@ -635,76 +700,129 @@ td {
 </body>
 </html>`;
 
-/**
- * Main function to inspect and reformat the page content.
- */
-function inspectAndReformatPage() {
+const summarizeSimpleObject = (value, keysToIgnore) => {
+    let a, b;
+    keysToIgnore = keysToIgnore || [];
+    Object.keys(value).forEach(k => {
+        if (!keysToIgnore.includes(k) || !a) {
+            a = k;
+            b = value[k];
+        }
+    });
+    return a + ':' + b;
+};
+
+function JSONPredicate(config) {
+    if (!config) throw new Error('config is required');
+    this.type = config.type;
+    if (!this.type) throw new Error('type is required');
+    switch (this.type) {
+        case 'keysPresent':
+            if (!config.keys) throw new Error('keys is required');
+            this.keys = config.keys;
+            break;
+        case 'valueRegex':
+            if (!config.key) throw new Error('key is required');
+            if (!config.regex) throw new Error('regex is required');
+            this.key = config.key;
+            this.regex = new RegExp(config.regex);
+            break;
+        case 'simpleObject':
+            this.maxLength = config.maxLength || 30;
+            this.keysToIgnore = config.keysToIgnore || [];
+            break;
+        default:
+            throw new Error('Invalid predicate type: ' + config.type);
+    }
+}
+
+JSONPredicate.prototype.test = function (value) {
+    if (value) {
+        switch (this.type) {
+            case 'keysPresent':
+                return this.keys.every(key => value[key] !== void 0);
+            case 'valueRegex':
+                return this.regex.test(value[this.key]);
+            case 'simpleObject':
+                const relevantKeys = Object.keys(value).filter(k => !this.keysToIgnore.includes(k));
+                return relevantKeys.length === 1 &&
+                    Object.values(value).filter(v => isArrayOrObject(v)).length === 0 &&
+                    summarizeSimpleObject(value, this.keysToIgnore).length <= this.maxLength;
+        }
+    }
+    return false;
+};
+
+function JSONSummarizer(config) {
+    if (!config) throw new Error('config is required');
+    this.type = config.type;
+    if (!this.type) throw new Error('type is required');
+    switch (this.type) {
+        case 'keyValue':
+            if (!config.key) throw new Error('key is required');
+            this.key = config.key;
+            break;
+        case 'joinedValues':
+            if (!config.keys) throw new Error('keys is required');
+            this.keys = config.keys;
+            this.joiner = config.joiner || '-';
+            break;
+        case 'financialAmount':
+            if (!config.amountKey) throw new Error('amountKey is required');
+            if (!config.currencyKey) throw new Error('currencyKey is required');
+            this.amountKey = config.amountKey;
+            this.currencyKey = config.currencyKey;
+            break;
+        case 'simpleObject':
+            this.maxLength = config.maxLength || 30;
+            this.keysToIgnore = config.keysToIgnore || [];
+            break;
+        default:
+            throw new Error('Invalid summarizer type: ' + config.type);
+    }
+}
+
+JSONSummarizer.prototype.summarize = function (value) {
+    if (value === void 0) {
+        return;
+    }
+    switch (this.type) {
+        case 'keyValue':
+            return value[this.key];
+        case 'joinedValues':
+            return this.keys.map(key => value[key]).join(this.joiner);
+        case 'financialAmount':
+            const amount = value[this.amountKey];
+            const currency = value[this.currencyKey].toUpperCase();
+            switch (currency) {
+                case 'USD':
+                    return `$${amount.toFixed(2).replace(/(\d)(?=(\d\d\d)+(\.\d\d)?$)/g, '$1,')}`;
+                case 'EUR':
+                    return `€${amount.toFixed(2).replace(/(\d)(?=(\d\d\d)+(\.\d\d)?$)/g, '$1,')}`;
+                default:
+                    return `${amount.toFixed(2).replace(/(\d)(?=(\d\d\d)+(\.\d\d)?$)/g, '$1,')} ${currency}`;
+            }
+        case 'simpleObject':
+            return summarizeSimpleObject(value, this.keysToIgnore);
+    }
+};
+
+async function initializeExtension() {
     // Get the raw text content of the body.
     const pageContent = document.body.innerText.trim();
-
     // Check if the content starts with an open curly bracket or an open square bracket.
     if (pageContent.startsWith('{') || pageContent.startsWith('[')) {
         try {
+            // Load configuration from storage before proceeding
+            const summarizeConfigs = await loadSummarizeConfigs();
+            
             const application = new Application();
 
-            application.registerSummarizer((value) => {
-                return value && /[Aa]ction/.test(value.apiType) && value.code;
-            }, (value) => {
-                return value.code;
-            });
-
-            application.registerSummarizer((value) => {
-                return value && value.apiType === 'party' && value.role && value.id;
-            }, (value) => {
-                return value.role + '-' + value.id;
-            });
-
-            application.registerSummarizer((value) => {
-                return value && value.apiType === 'period' && value.numberOfUnits !== void 0 && value.timeUnit;
-            }, (value) => {
-                return value.numberOfUnits + ' ' + value.timeUnit;
-            });
-
-            application.registerSummarizer((value) => {
-                return value && value.apiType === 'anchor' && value.sourceId !== void 0 && value.sourceType;
-            }, (value) => {
-                return value.sourceType + '-' + value.sourceId;
-            });
-
-            application.registerSummarizer((value) => {
-                return value && value.apiType === 'financialAmount' && value.amount !== void 0 && value.currency;
-            }, (value) => {
-                switch (value.currency) {
-                    case 'USD':
-                        return `$${value.amount.toFixed(2).replace(/(\d)(?=(\d\d\d)+(\.\d\d)?$)/g, '$1,')}`;
-                    case 'EUR':
-                        return `€${value.amount.toFixed(2).replace(/(\d)(?=(\d\d\d)+(\.\d\d)?$)/g, '$1,')}`;
-                    default:
-                        return `${value.amount.toFixed(2).replace(/(\d)(?=(\d\d\d)+(\.\d\d)?$)/g, '$1,')} ${value.currency}`;
-                }
-            });
-
-            const summarizeSimpleObject = (value) => {
-                let a, b;
-                Object.keys(value).forEach(k => {
-                    if (k !== 'apiType' || !a) {
-                        a = k;
-                        b = value[k];
-                    }
-                });
-                return a + ':' + b;
-            };
-
-            application.registerSummarizer((value) => {
-                return value &&
-                    (
-                        Object.keys(value).length === 1 ||
-                        (value.apiType && Object.keys(value).length === 2)
-                    ) &&
-                    Object.values(value).filter(v => isArrayOrObject(v)).length === 0 &&
-                    summarizeSimpleObject(value).length <= 30;
-            }, summarizeSimpleObject);
-
+            for (const summarizeConfig of summarizeConfigs) {
+                const summarizer = new JSONSummarizer(summarizeConfig.summarizer);
+                const predicates = summarizeConfig.predicates.map(predicate => new JSONPredicate(predicate));
+                application.registerSummarizer(summarizer, predicates);
+            }
 
             application.init(pageContent);
 
@@ -721,8 +839,10 @@ function inspectAndReformatPage() {
 // We'll use a timeout to ensure the body content is available,
 // or check document.readyState.
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', inspectAndReformatPage);
+    document.addEventListener('DOMContentLoaded', () => {
+        initializeExtension().catch(console.error);
+    });
 } else {
     // If the document is already loaded (e.g., script injected after load), run immediately.
-    inspectAndReformatPage();
+    initializeExtension().catch(console.error);
 }
