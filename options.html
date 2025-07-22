@@ -108,6 +108,37 @@
         .example-link:hover {
             text-decoration: underline;
         }
+        .documentation {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .documentation h3 {
+            color: #495057;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        .documentation ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .documentation li {
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+        .documentation ul ul {
+            margin-top: 5px;
+        }
+        .documentation code {
+            background-color: #e9ecef;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 11px;
+        }
     </style>
 </head>
 <body>
@@ -115,6 +146,56 @@
         <h1>JSON Formatter Configuration</h1>
         <div class="description">
             Configure how JSON objects are summarized and displayed. The configuration uses predicates to match JSON objects and summarizers to create readable descriptions.
+        </div>
+        
+        <div class="documentation">
+            <h3>Predicate Types</h3>
+            <ul>
+                <li><strong>keysPresent</strong>: Checks if specific keys exist in the object
+                    <ul>
+                        <li><code>keys</code> (array): List of keys that must be present</li>
+                    </ul>
+                </li>
+                <li><strong>valueRegex</strong>: Tests if a key's value matches a regular expression
+                    <ul>
+                        <li><code>key</code> (string): The key to test</li>
+                        <li><code>regex</code> (string): Regular expression pattern to match against</li>
+                    </ul>
+                </li>
+                <li><strong>simpleObject</strong>: Matches objects that only have a single key
+                    <ul>
+                        <li><code>keysToIgnore</code> (array, optional): List of keys to ignore when counting</li>
+                        <li><code>maxLength</code> (number, optional): Maximum length for the summary (default: 30)</li>
+                    </ul>
+                </li>
+            </ul>
+            
+            <h3>Summarizer Types</h3>
+            <ul>
+                <li><strong>keyValue</strong>: Shows the value of a specific key
+                    <ul>
+                        <li><code>key</code> (string): The key whose value to display</li>
+                    </ul>
+                </li>
+                <li><strong>joinedValues</strong>: Combines multiple key values with a separator
+                    <ul>
+                        <li><code>keys</code> (array): List of keys to combine</li>
+                        <li><code>joiner</code> (string, optional): Separator between values (default: "-")</li>
+                    </ul>
+                </li>
+                <li><strong>financialAmount</strong>: Formats currency amounts
+                    <ul>
+                        <li><code>amountKey</code> (string): Key containing the numeric amount</li>
+                        <li><code>currencyKey</code> (string): Key containing the currency code</li>
+                    </ul>
+                </li>
+                <li><strong>simpleObject</strong>: Shows a key-value (configuration includes list of keys to ignore)
+                    <ul>
+                        <li><code>keysToIgnore</code> (array, optional): List of keys to ignore</li>
+                        <li><code>maxLength</code> (number, optional): Maximum length for the summary (default: 30)</li>
+                    </ul>
+                </li>
+            </ul>
         </div>
         
         <div class="form-group">
