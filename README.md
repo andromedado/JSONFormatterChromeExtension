@@ -37,15 +37,27 @@ The configuration uses an array of objects with `predicates` and `summarizers`:
 ### Predicate Types
 
 - **keysPresent**: Checks if specific keys exist in the object
+  - `keys` (array): List of keys that must be present
 - **valueRegex**: Tests if a key's value matches a regular expression
-- **simpleObject**: Matches objects that only have a single key (configuration includes list of keys to ignore)
+  - `key` (string): The key to test
+  - `regex` (string): Regular expression pattern to match against
+- **simpleObject**: Matches objects that only have a single key
+  - `keysToIgnore` (array, optional): List of keys to ignore when counting
+  - `maxLength` (number, optional): Maximum length for the summary (default: 30)
 
 ### Summarizer Types
 
 - **keyValue**: Shows the value of a specific key
+  - `key` (string): The key whose value to display
 - **joinedValues**: Combines multiple key values with a separator
-- **financialAmount**: Formats currency amounts with proper formatting
+  - `keys` (array): List of keys to combine
+  - `joiner` (string, optional): Separator between values (default: "-")
+- **financialAmount**: Formats currency amounts
+  - `amountKey` (string): Key containing the numeric amount
+  - `currencyKey` (string): Key containing the currency code
 - **simpleObject**: Shows a key-value (configuration includes list of keys to ignore)
+  - `keysToIgnore` (array, optional): List of keys to ignore
+  - `maxLength` (number, optional): Maximum length for the summary (default: 30)
 
 ## Keyboard Shortcuts
 
