@@ -652,7 +652,7 @@ td {
 }
 .key, .value {
   padding: 0.25em;
-  vertical-align: middle;
+  vertical-align: top;
 }
 .key {
   text-align: left;
@@ -671,6 +671,8 @@ td {
 }
 .jsoned {
   color:rgb(185, 97, 97);
+  max-width: 700px;/* this is not strict on table cells, but gives browser a hint about when to start wrapping */
+  overflow-wrap: break-word;
 }
 .raw {
   color:rgb(97, 98, 185);
