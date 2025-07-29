@@ -32,6 +32,13 @@ const DEFAULT_SUMMARIZE_CONFIGS = [
     },
     {
         predicates: [
+            {type: 'keysPresent', keys: ['apiType', 'type', 'status']},
+            {type: 'valueRegex', key: 'apiType', regex: '[Rr]eview'}
+        ],
+        summarizer: {type: 'joinedValues', keys: ['type', 'status']}
+    },
+    {
+        predicates: [
             {type: 'keysPresent', keys: ['apiType', 'amount', 'currency']},
             {type: 'valueRegex', key: 'apiType', regex: '[Ff]inancial'}
         ],
