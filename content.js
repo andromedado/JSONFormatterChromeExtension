@@ -11,6 +11,12 @@ const DEFAULT_SUMMARIZE_CONFIGS = [
     },
     {
         predicates: [
+            {type: 'keysPresent', keys: ['paymentMethodType']},
+        ],
+        summarizer: {type: 'keyValue', key: 'paymentMethodType'}
+    },
+    {
+        predicates: [
             {type: 'keysPresent', keys: ['apiType', 'role', 'id']},
             {type: 'valueRegex', key: 'apiType', regex: '[Pp]arty'}
         ],
@@ -55,13 +61,15 @@ const DEFAULT_SUMMARIZE_CONFIGS = [
 // Function to load configuration from storage
 function loadSummarizeConfigs() {
     return new Promise((resolve) => {
-        chrome.storage.sync.get(['summarizeConfigs'], function(result) {
-            if (result.summarizeConfigs && Array.isArray(result.summarizeConfigs)) {
-                summarizeConfigs = result.summarizeConfigs;
-            } else {
-                summarizeConfigs = DEFAULT_SUMMARIZE_CONFIGS;
+        chrome.storage.sync.get(['useDefaultConfig', 'useCustomConfig', 'customConfig'], function(result) {
+            let configuration = [];
+            if (result.useDefaultConfig) {
+                configuration = configuration.concat(DEFAULT_SUMMARIZE_CONFIGS);
             }
-            resolve(summarizeConfigs);
+            if (result.useCustomConfig && result.customConfig && Array.isArray(result.customConfig)) {
+                configuration = configuration.concat(result.customConfig);
+            }
+            resolve(configuration);
         });
     });
 }
@@ -767,6 +775,10 @@ function JSONSummarizer(config) {
     this.type = config.type;
     if (!this.type) throw new Error('type is required');
     switch (this.type) {
+        case 'static':
+            if (config.value === void 0) throw new Error('value is required');
+            this.value = config.value;
+            break;
         case 'keyValue':
             if (!config.key) throw new Error('key is required');
             this.key = config.key;
@@ -796,6 +808,8 @@ JSONSummarizer.prototype.summarize = function (value) {
         return;
     }
     switch (this.type) {
+        case 'static':
+            return this.value;
         case 'keyValue':
             return value[this.key];
         case 'joinedValues':

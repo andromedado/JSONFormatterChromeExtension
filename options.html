@@ -24,6 +24,7 @@
             border-bottom: 2px solid #007acc;
             padding-bottom: 10px;
         }
+        .none { display: none; }
         .description {
             color: #666;
             margin-bottom: 30px;
@@ -148,7 +149,7 @@
             Configure how JSON objects are summarized and displayed. The configuration uses predicates to match JSON objects and summarizers to create readable descriptions.
         </div>
         
-        <h2>Summarization Configuration</h2>
+        <h2>JSON Object Summarization</h2>
         <div class="documentation">
             <h3>Predicate Types</h3>
             <ul>
@@ -173,6 +174,11 @@
             
             <h3>Summarizer Types</h3>
             <ul>
+                <li><strong>static</strong>: Shows a static value
+                    <ul>
+                        <li><code>value</code> (string): The value to display</li>
+                    </ul>
+                </li>
                 <li><strong>keyValue</strong>: Shows the value of a specific key
                     <ul>
                         <li><code>key</code> (string): The key whose value to display</li>
@@ -198,17 +204,22 @@
                 </li>
             </ul>
         </div>
+
+        <h2><label for="useDefaultConfig">Default Summarization Configuration<input type="checkbox" id="useDefaultConfig" /></label></h2>
+        <div class="form-group">
+            <textarea id="defaultConfig" spellcheck="false" autocorrect="off" autocomplete="off" autocapitalize="off" readonly disabled></textarea>
+        </div>
         
         <div class="form-group">
-            <label for="configTextarea">
-                JSON Configuration
-            </label>
-            <textarea id="configTextarea" placeholder="Enter your JSON configuration here..." spellcheck="false" autocorrect="off" autocomplete="off" autocapitalize="off"></textarea>
+            <h2><label for="useCustomConfig">
+                Custom Summarization Configuration <input type="checkbox" id="useCustomConfig" />
+            </label></h2>
+            <textarea class="none" id="customConfig" placeholder="Enter your Custom Configuration here..." spellcheck="false" autocorrect="off" autocomplete="off" autocapitalize="off">[
+]</textarea>
         </div>
         
         <div class="button-group">
             <button class="btn-primary" id="saveBtn">Save Configuration</button>
-            <button class="btn-secondary" id="resetBtn">Reset to Default</button>
         </div>
         
         <div id="status" class="status"></div>

@@ -47,6 +47,8 @@ The configuration uses an array of objects with `predicates` and `summarizers`:
 
 ### Summarizer Types
 
+- **static**: Shows exactly the specified value
+  - `value` (string): The value to present
 - **keyValue**: Shows the value of a specific key
   - `key` (string): The key whose value to display
 - **joinedValues**: Combines multiple key values with a separator
