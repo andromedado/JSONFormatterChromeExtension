@@ -148,6 +148,16 @@
         <div class="description">
             Configure how JSON objects are summarized and displayed. The configuration uses predicates to match JSON objects and summarizers to create readable descriptions.
         </div>
+
+    <!--
+        <h2>Dispaly Configuration</h2>
+        <div class="form-group">
+            <label for="backgroundColor">Background Color</label>
+            <input type="color" id="backgroundColor" value="#ffffff" />
+            <label for="textColor">Text Color</label>
+            <input type="color" id="textColor" value="#000000" />
+        </div>
+    -->
         
         <h2>JSON Object Summarization</h2>
         <div class="documentation">
@@ -186,7 +196,7 @@
                 </li>
                 <li><strong>joinedValues</strong>: Combines multiple key values with a separator
                     <ul>
-                        <li><code>keys</code> (array): List of keys to combine</li>
+                        <li><code>keys</code> (array): List of keys to combine (keys not present in object will be ignored)</li>
                         <li><code>joiner</code> (string, optional): Separator between values (default: "-")</li>
                     </ul>
                 </li>

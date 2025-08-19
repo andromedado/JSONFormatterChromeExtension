@@ -2,9 +2,16 @@ const DEFAULT_SUMMARIZE_CONFIGS = [
     {
         predicates: [
             {type: 'keysPresent', keys: ['apiType', 'code']},
-            {type: 'valueRegex', key: 'apiType', regex: '[Aa]ction'}
+            {type: 'valueRegex', key: 'apiType', regex: 'action|invoiceItem'}
         ],
         summarizer: {type: 'keyValue', key: 'code'}
+    },
+    {
+        predicates: [
+            {type: 'keysPresent', keys: ['apiType', 'reference']},
+            {type: 'valueRegex', key: 'apiType', regex: '(flat|percent)?[Aa]djustment(Rate)?'}
+        ],
+        summarizer: {type: 'joinedValues', keys: ['reference', 'status']}
     },
     {
         predicates: [

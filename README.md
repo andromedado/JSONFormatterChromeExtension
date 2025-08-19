@@ -52,7 +52,7 @@ The configuration uses an array of objects with `predicates` and `summarizers`:
 - **keyValue**: Shows the value of a specific key
   - `key` (string): The key whose value to display
 - **joinedValues**: Combines multiple key values with a separator
-  - `keys` (array): List of keys to combine
+  - `keys` (array): List of keys to combine (keys not present in object will be ignored)
   - `joiner` (string, optional): Separator between values (default: "-")
 - **financialAmount**: Formats currency amounts
   - `amountKey` (string): Key containing the numeric amount

@@ -5,9 +5,16 @@ const DEFAULT_SUMMARIZE_CONFIGS = [
     {
         predicates: [
             {type: 'keysPresent', keys: ['apiType', 'code']},
-            {type: 'valueRegex', key: 'apiType', regex: '[Aa]ction'}
+            {type: 'valueRegex', key: 'apiType', regex: 'action|invoiceItem'}
         ],
         summarizer: {type: 'keyValue', key: 'code'}
+    },
+    {
+        predicates: [
+            {type: 'keysPresent', keys: ['apiType', 'reference']},
+            {type: 'valueRegex', key: 'apiType', regex: '(flat|percent)?[Aa]djustment(Rate)?'}
+        ],
+        summarizer: {type: 'joinedValues', keys: ['reference', 'status']}
     },
     {
         predicates: [
@@ -813,7 +820,7 @@ JSONSummarizer.prototype.summarize = function (value) {
         case 'keyValue':
             return value[this.key];
         case 'joinedValues':
-            return this.keys.map(key => value[key]).join(this.joiner);
+            return this.keys.map(key => value[key]).filter(v => v !== void 0).join(this.joiner);
         case 'financialAmount':
             const amount = value[this.amountKey];
             const currency = value[this.currencyKey].toUpperCase();
