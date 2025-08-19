@@ -1,82 +1,15 @@
 // content.js - This script runs on every page to check and reformat content.
 
-// Default configuration that will be used if no custom config is found
-const DEFAULT_SUMMARIZE_CONFIGS = [
-    {
-        predicates: [
-            {type: 'keysPresent', keys: ['apiType', 'code']},
-            {type: 'valueRegex', key: 'apiType', regex: 'action|invoiceItem'}
-        ],
-        summarizer: {type: 'keyValue', key: 'code'}
-    },
-    {
-        predicates: [
-            {type: 'keysPresent', keys: ['apiType', 'reference']},
-            {type: 'valueRegex', key: 'apiType', regex: '(flat|percent)?[Aa]djustment(Rate)?'}
-        ],
-        summarizer: {type: 'joinedValues', keys: ['reference', 'status']}
-    },
-    {
-        predicates: [
-            {type: 'keysPresent', keys: ['paymentMethodType']},
-        ],
-        summarizer: {type: 'keyValue', key: 'paymentMethodType'}
-    },
-    {
-        predicates: [
-            {type: 'keysPresent', keys: ['apiType', 'role', 'id']},
-            {type: 'valueRegex', key: 'apiType', regex: '[Pp]arty'}
-        ],
-        summarizer: {type: 'joinedValues', keys: ['role', 'id']}
-    },
-    {
-        predicates: [
-            {type: 'keysPresent', keys: ['apiType', 'numberOfUnits', 'timeUnit']},
-            {type: 'valueRegex', key: 'apiType', regex: '[Pp]eriod'}
-        ],
-        summarizer: {type: 'joinedValues', keys: ['numberOfUnits', 'timeUnit'], joiner: ' '}
-    },
-    {
-        predicates: [
-            {type: 'keysPresent', keys: ['apiType', 'sourceId', 'sourceType']},
-            {type: 'valueRegex', key: 'apiType', regex: '[Aa]nchor'}
-        ],
-        summarizer: {type: 'joinedValues', keys: ['sourceType', 'sourceId']}
-    },
-    {
-        predicates: [
-            {type: 'keysPresent', keys: ['apiType', 'type', 'status']},
-            {type: 'valueRegex', key: 'apiType', regex: '[Rr]eview'}
-        ],
-        summarizer: {type: 'joinedValues', keys: ['type', 'status']}
-    },
-    {
-        predicates: [
-            {type: 'keysPresent', keys: ['apiType', 'amount', 'currency']},
-            {type: 'valueRegex', key: 'apiType', regex: '[Ff]inancial'}
-        ],
-        summarizer: {type: 'financialAmount', amountKey: 'amount', currencyKey: 'currency'}
-    },
-    {
-        predicates: [
-            {type: 'simpleObject', keysToIgnore: ['apiType']}
-        ],
-        summarizer: {type: 'simpleObject', keysToIgnore: ['apiType']}
-    }
-];
-
 // Function to load configuration from storage
 function loadSummarizeConfigs() {
     return new Promise((resolve) => {
-        chrome.storage.sync.get(['useDefaultConfig', 'useCustomConfig', 'customConfig'], function(result) {
-            let configuration = [];
-            if (result.useDefaultConfig) {
-                configuration = configuration.concat(DEFAULT_SUMMARIZE_CONFIGS);
+        chrome.runtime.sendMessage({message: 'getConfigs'}, function(response) {
+            if (chrome.runtime.lastError) {
+                console.error('Error getting configs:', chrome.runtime.lastError);
+                resolve([]);
+            } else {
+                resolve(response || []);
             }
-            if (result.useCustomConfig && result.customConfig && Array.isArray(result.customConfig)) {
-                configuration = configuration.concat(result.customConfig);
-            }
-            resolve(configuration);
         });
     });
 }
@@ -876,3 +809,5 @@ if (document.readyState === 'loading') {
     // If the document is already loaded (e.g., script injected after load), run immediately.
     initializeExtension().catch(console.error);
 }
+
+

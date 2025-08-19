@@ -1,66 +1,20 @@
-const DEFAULT_SUMMARIZE_CONFIGS = [
-    {
-        predicates: [
-            {type: 'keysPresent', keys: ['apiType', 'code']},
-            {type: 'valueRegex', key: 'apiType', regex: 'action|invoiceItem'}
-        ],
-        summarizer: {type: 'keyValue', key: 'code'}
-    },
-    {
-        predicates: [
-            {type: 'keysPresent', keys: ['apiType', 'reference']},
-            {type: 'valueRegex', key: 'apiType', regex: '(flat|percent)?[Aa]djustment(Rate)?'}
-        ],
-        summarizer: {type: 'joinedValues', keys: ['reference', 'status']}
-    },
-    {
-        predicates: [
-            {type: 'keysPresent', keys: ['paymentMethodType']},
-        ],
-        summarizer: {type: 'keyValue', key: 'paymentMethodType'}
-    },
-    {
-        predicates: [
-            {type: 'keysPresent', keys: ['apiType', 'role', 'id']},
-            {type: 'valueRegex', key: 'apiType', regex: '[Pp]arty'}
-        ],
-        summarizer: {type: 'joinedValues', keys: ['role', 'id']}
-    },
-    {
-        predicates: [
-            {type: 'keysPresent', keys: ['apiType', 'numberOfUnits', 'timeUnit']},
-            {type: 'valueRegex', key: 'apiType', regex: '[Pp]eriod'}
-        ],
-        summarizer: {type: 'joinedValues', keys: ['numberOfUnits', 'timeUnit'], joiner: ' '}
-    },
-    {
-        predicates: [
-            {type: 'keysPresent', keys: ['apiType', 'sourceId', 'sourceType']},
-            {type: 'valueRegex', key: 'apiType', regex: '[Aa]nchor'}
-        ],
-        summarizer: {type: 'joinedValues', keys: ['sourceType', 'sourceId']}
-    },
-    {
-        predicates: [
-            {type: 'keysPresent', keys: ['apiType', 'type', 'status']},
-            {type: 'valueRegex', key: 'apiType', regex: '[Rr]eview'}
-        ],
-        summarizer: {type: 'joinedValues', keys: ['type', 'status']}
-    },
-    {
-        predicates: [
-            {type: 'keysPresent', keys: ['apiType', 'amount', 'currency']},
-            {type: 'valueRegex', key: 'apiType', regex: '[Ff]inancial'}
-        ],
-        summarizer: {type: 'financialAmount', amountKey: 'amount', currencyKey: 'currency'}
-    },
-    {
-        predicates: [
-            {type: 'simpleObject', keysToIgnore: ['apiType']}
-        ],
-        summarizer: {type: 'simpleObject', keysToIgnore: ['apiType']}
+let DEFAULT_SUMMARIZE_CONFIGS;
+let domLoaded = false;
+
+chrome.runtime.sendMessage({message: 'getDefaultConfigs'}, function(response) {
+    if (chrome.runtime.lastError) {
+        console.error('Error getting default configs:', chrome.runtime.lastError);
+        DEFAULT_SUMMARIZE_CONFIGS = [];
+    } else {
+        DEFAULT_SUMMARIZE_CONFIGS = response || [];
     }
-];
+    initIfReady();
+});
+
+function domContentLoaded() {
+    domLoaded = true;
+    initIfReady();
+}
 
 // DOM elements
 const customConfigEl = document.getElementById('customConfig');
@@ -79,7 +33,11 @@ function enforceCustomConfig() {
 }
 
 // Load configuration from storage
-function loadConfig() {
+function initIfReady() {
+    if (!domLoaded || !DEFAULT_SUMMARIZE_CONFIGS) {
+        return;
+    }
+
     defaultConfigEl.value = JSON.stringify(DEFAULT_SUMMARIZE_CONFIGS, null, 2);
     chrome.storage.sync.get(['customConfig', 'useDefaultConfig', 'useCustomConfig', 'everSaved'], function(result) {
         if (result.customConfig) {
@@ -152,4 +110,4 @@ saveBtn.addEventListener('click', saveConfig);
 useCustomConfig.addEventListener('change', enforceCustomConfig);
 
 // Load configuration when page loads
-document.addEventListener('DOMContentLoaded', loadConfig); 
+document.addEventListener('DOMContentLoaded', domContentLoaded); 
