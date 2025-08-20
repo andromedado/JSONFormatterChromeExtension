@@ -1,5 +1,13 @@
 // background.js - Background script for JSON Formatter extension
 
+const BOOLEAN_CONFIGS = [
+    {
+        name: 'alphabetizeKeys',
+        description: 'Alphabetize keys in the formatted JSON',
+        defaultValue: false
+    }
+];
+
 // Default configuration for JSON summarization
 const DEFAULT_SPECIFIC_CONFIGS = [
     {
@@ -108,8 +116,11 @@ const DEFAULT_SUMMARIZE_CONFIGS = [
 
 // Listen for messages from content scripts, popup, and options page
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.message === 'getDefaultConfigs') {
-        sendResponse(DEFAULT_SUMMARIZE_CONFIGS);
+    if (request.message === 'getAllOptions') {
+        sendResponse({
+            DEFAULT_SUMMARIZE_CONFIGS,
+            BOOLEAN_CONFIGS
+        });
         return true; // Keep the message channel open for async response
     }
     
