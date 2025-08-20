@@ -176,7 +176,7 @@ function Application(booleanConfigurations) {
     this.copyToClipboardEl = el('button', '📋 Copy All to Clipboard', this.breadcrumbsEl, {class: 'copy-to-clipboard copy-all'});
     this.breadcrumbsSpan = el('span', void 0, this.breadcrumbsEl);
     this.copyValueEl = el('button', '📋 Copy Value to Clipboard', this.breadcrumbsEl, {class: 'copy-to-clipboard copy-value'});
-    this.copyToClipboardEl.addEventListener('click', this.copyToClipboard.bind(this));
+    this.copyToClipboardEl.addEventListener('click', this.copyAllToClipboard.bind(this));
     this.copyValueEl.addEventListener('click', this.copyValue.bind(this));
     this.rootRow = el('tr', void 0, el('tbody', void 0, el('table', void 0, html, {class: 'root-table'})));
     this.columns = [];
@@ -348,22 +348,28 @@ Application.prototype.copyValue = function () {
     }
     navigator.clipboard.writeText(JSON.stringify(currentValue, null, 2));
 
+    if (!this.copyValueEl.dataset.originalText) {
+        this.copyValueEl.dataset.originalText = this.copyValueEl.innerText;
+    }
     this.copyValueEl.innerText = '📋 Copied!';
     this.copyValueEl.classList.add('copied');
-    clearTimeout(this.refreshTimeout);
-    this.refreshTimeout = setTimeout(() => {
-        this.copyValueEl.innerText = '📋 Copy Value to Clipboard';
+    clearTimeout(this.copyValueRefreshTimeout);
+    this.copyValueRefreshTimeout = setTimeout(() => {
+        this.copyValueEl.innerText = this.copyValueEl.dataset.originalText;
         this.copyValueEl.classList.remove('copied');
     }, 1000);
 };
 
-Application.prototype.copyToClipboard = function () {
+Application.prototype.copyAllToClipboard = function () {
     navigator.clipboard.writeText(JSON.stringify(this.rawJSON, null, 2));
+    if (!this.copyToClipboardEl.dataset.originalText) {
+        this.copyToClipboardEl.dataset.originalText = this.copyToClipboardEl.innerText;
+    }
     this.copyToClipboardEl.innerText = '📋 Copied!';
     this.copyToClipboardEl.classList.add('copied');
-    clearTimeout(this.refreshTimeout);
-    this.refreshTimeout = setTimeout(() => {
-        this.copyToClipboardEl.innerText = '📋 Copy to Clipboard';
+    clearTimeout(this.copyAllRefreshTimeout);
+    this.copyAllRefreshTimeout = setTimeout(() => {
+        this.copyToClipboardEl.innerText = this.copyToClipboardEl.dataset.originalText;
         this.copyToClipboardEl.classList.remove('copied');
     }, 1000);
 };
