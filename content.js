@@ -173,6 +173,11 @@ function Application(booleanConfigurations) {
     const html = el('div');
     this.el = html;
     this.breadcrumbsEl = el('div', void 0, html, {class: 'breadcrumbs'});
+    this.copyToClipboardEl = el('button', '📋 Copy All to Clipboard', this.breadcrumbsEl, {class: 'copy-to-clipboard copy-all'});
+    this.breadcrumbsSpan = el('span', void 0, this.breadcrumbsEl);
+    this.copyValueEl = el('button', '📋 Copy Value to Clipboard', this.breadcrumbsEl, {class: 'copy-to-clipboard copy-value'});
+    this.copyToClipboardEl.addEventListener('click', this.copyToClipboard.bind(this));
+    this.copyValueEl.addEventListener('click', this.copyValue.bind(this));
     this.rootRow = el('tr', void 0, el('tbody', void 0, el('table', void 0, html, {class: 'root-table'})));
     this.columns = [];
     this.summarizers = [];
@@ -253,7 +258,7 @@ Application.prototype.loadBreadcrumbs = function (hash) {
 
 Application.prototype.renderBreadcrumbs = function () {
     const breadcrumbs = getBreadcrumbs();
-    this.breadcrumbsEl.innerText = breadcrumbs
+    this.breadcrumbsSpan.innerText = breadcrumbs
     location.hash = breadcrumbs;
 };
 
@@ -327,6 +332,42 @@ Application.prototype.keyHandler = function (e) {
     }
 };
 
+Application.prototype.copyValue = function () {
+    const breadcrumbs = getBreadcrumbs().replace(/^\.|\.$/g, '').split('.');
+    let currentValue = this.rawJSON;
+    try {
+    for (const breadcrumb of breadcrumbs) {
+        if (/^\[\d+\]$/.test(breadcrumb)) {
+            currentValue = currentValue[parseInt(breadcrumb.slice(1, -1), 10)];
+        } else {
+            currentValue = currentValue[breadcrumb];
+            }
+        }
+    } catch (e) {
+        console.error('Error copying value:', e);
+    }
+    navigator.clipboard.writeText(JSON.stringify(currentValue, null, 2));
+
+    this.copyValueEl.innerText = '📋 Copied!';
+    this.copyValueEl.classList.add('copied');
+    clearTimeout(this.refreshTimeout);
+    this.refreshTimeout = setTimeout(() => {
+        this.copyValueEl.innerText = '📋 Copy Value to Clipboard';
+        this.copyValueEl.classList.remove('copied');
+    }, 1000);
+};
+
+Application.prototype.copyToClipboard = function () {
+    navigator.clipboard.writeText(JSON.stringify(this.rawJSON, null, 2));
+    this.copyToClipboardEl.innerText = '📋 Copied!';
+    this.copyToClipboardEl.classList.add('copied');
+    clearTimeout(this.refreshTimeout);
+    this.refreshTimeout = setTimeout(() => {
+        this.copyToClipboardEl.innerText = '📋 Copy to Clipboard';
+        this.copyToClipboardEl.classList.remove('copied');
+    }, 1000);
+};
+
 Application.prototype.addLookup = function (value, tr) {
     if (value !== void 0) {
         value = value + '';
@@ -336,6 +377,9 @@ Application.prototype.addLookup = function (value, tr) {
 };
 
 Application.prototype.consume = function (json, currentDepth) {
+    if (currentDepth === 0) {
+        this.rawJSON = json;
+    }
     const column = this.getColumn(currentDepth);
     const table = el('table', void 0, column, {class: 'json-table none'});
     table.dataset.column = currentDepth;
@@ -536,6 +580,21 @@ body {
 }
 table {
   border-collapse: collapse;
+}
+.copy-to-clipboard {
+  width: 15em;
+  text-align: center;
+  border: none;
+  background-color: transparent;
+  color: #000;
+  font-size: 0.8em;
+  margin-left: 1em;
+}
+.copy-all {
+  float: right;
+}
+.copy-to-clipboard.copied {
+  background-color:rgb(202, 255, 196);
 }
 .finder {
   position: fixed;
