@@ -90,6 +90,14 @@ const DEFAULT_SPECIFIC_CONFIGS = [
 
 const DEFAULT_CATCHALL_CONFIGS = [
     {
+        name: 'ID Priority Types',
+        predicates: [
+            {type: 'keysPresent', keys: ['apiType', 'id']},
+            {type: 'valueRegex', key: 'apiType', regex: '[Ss]eller|[Uu]ser'}
+        ],
+        summarizer: {type: 'keyValue', key: 'id'}
+    },
+    {
         predicates: [
             {type: 'keysPresent', keys: ['apiType', 'status']},
         ],
