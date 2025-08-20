@@ -1,14 +1,14 @@
 // content.js - This script runs on every page to check and reformat content.
 
 // Function to load configuration from storage
-function loadSummarizeConfigs() {
+function loadConfigs() {
     return new Promise((resolve) => {
         chrome.runtime.sendMessage({message: 'getConfigs'}, function(response) {
             if (chrome.runtime.lastError) {
                 console.error('Error getting configs:', chrome.runtime.lastError);
-                resolve([]);
+                resolve({});
             } else {
-                resolve(response || []);
+                resolve(response || {});
             }
         });
     });
@@ -168,7 +168,8 @@ Finder.prototype.init = function () {
     });
 }
 
-function Application() {
+function Application(booleanConfigurations) {
+    this.booleanConfigurations = booleanConfigurations;
     const html = el('div');
     this.el = html;
     this.breadcrumbsEl = el('div', void 0, html, {class: 'breadcrumbs'});
@@ -401,11 +402,15 @@ Application.prototype.consume = function (json, currentDepth) {
             }
         }
     } else if (isObject(json)) {
-        const keys = Object.keys(json);
+        const keys = [].slice.call(Object.keys(json));
+        if (this.booleanConfigurations.alphabetizeKeys) {
+            keys.sort();
+        }
         if (keys.length === 0) {
             addSimpleRow(void 0, '[Empty Object]', true, true);
         } else {
-            for (const [key, value] of Object.entries(json)) {
+            for (const key of keys) {
+                const value = json[key];
                 if (isArrayOrObject(value)) {
                     addRowWithChild(key, value);
                 } else {
@@ -783,11 +788,13 @@ async function initializeExtension() {
     if (pageContent.startsWith('{') || pageContent.startsWith('[')) {
         try {
             // Load configuration from storage before proceeding
-            const summarizeConfigs = await loadSummarizeConfigs();
-            
-            const application = new Application();
+            const appConfigs = await loadConfigs();
+            const summarizationConfiguration = appConfigs.summarizationConfiguration || [];
+            const booleanConfigurations = appConfigs.booleanConfigurations || {};
 
-            for (const summarizeConfig of summarizeConfigs) {
+            const application = new Application(booleanConfigurations);
+
+            for (const summarizeConfig of summarizationConfiguration) {
                 const summarizer = new JSONSummarizer(summarizeConfig.summarizer);
                 const predicates = summarizeConfig.predicates.map(predicate => new JSONPredicate(predicate));
                 application.registerSummarizer(summarizer, predicates);

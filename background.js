@@ -126,18 +126,29 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     
     if (request.message === 'getConfigs') {
         // Return both default and custom configs based on storage settings
-        chrome.storage.sync.get(['useDefaultConfig', 'useCustomConfig', 'customConfig'], function(result) {
-            let configuration = [];
+        chrome.storage.sync.get(['useDefaultConfig', 'useCustomConfig', 'customConfig', 'booleanConfigs'], function(result) {
+            let summarizationConfiguration = [];
             
             if (result.useCustomConfig && result.customConfig && Array.isArray(result.customConfig)) {
-                configuration = configuration.concat(result.customConfig);
+                summarizationConfiguration = summarizationConfiguration.concat(result.customConfig);
             }
             
             if (result.useDefaultConfig !== false) { // Default to true if not set
-                configuration = configuration.concat(DEFAULT_SUMMARIZE_CONFIGS);
+                summarizationConfiguration = summarizationConfiguration.concat(DEFAULT_SUMMARIZE_CONFIGS);
+            }
+
+            let booleanConfigurations = {};
+            for (const config of BOOLEAN_CONFIGS) {
+                booleanConfigurations[config.name] = result.booleanConfigs?.[config.name]?.currentValue;
+                if (booleanConfigurations[config.name] === void 0) {
+                    booleanConfigurations[config.name] = config.defaultValue;
+                }
             }
             
-            sendResponse(configuration);
+            sendResponse({
+                summarizationConfiguration,
+                booleanConfigurations
+            });
         });
         return true; // Keep the message channel open for async response
     }
