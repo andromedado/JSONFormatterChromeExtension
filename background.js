@@ -1,11 +1,11 @@
 // background.js - Background script for JSON Formatter extension
 
 // Default configuration for JSON summarization
-const DEFAULT_SUMMARIZE_CONFIGS = [
+const DEFAULT_SPECIFIC_CONFIGS = [
     {
         predicates: [
             {type: 'keysPresent', keys: ['apiType', 'code']},
-            {type: 'valueRegex', key: 'apiType', regex: 'action|invoiceItem'}
+            {type: 'valueRegex', key: 'apiType', regex: '[aA]ction|invoiceItem'}
         ],
         summarizer: {type: 'keyValue', key: 'code'}
     },
@@ -45,10 +45,10 @@ const DEFAULT_SUMMARIZE_CONFIGS = [
     },
     {
         predicates: [
-            {type: 'keysPresent', keys: ['apiType', 'type', 'status']},
-            {type: 'valueRegex', key: 'apiType', regex: '[Rr]eview'}
+            {type: 'keysPresent', keys: ['apiType', 'type']},
+            {type: 'valueRegex', key: 'apiType', regex: '[Rr]eview|[iI]nvoice'}
         ],
-        summarizer: {type: 'joinedValues', keys: ['type', 'status']}
+        summarizer: {type: 'joinedValues', keys: ['type', 'status', 'snapshotType']}
     },
     {
         predicates: [
@@ -59,10 +59,51 @@ const DEFAULT_SUMMARIZE_CONFIGS = [
     },
     {
         predicates: [
+            {type: 'keysPresent', keys: ['apiType', 'id']},
+            {type: 'valueRegex', key: 'apiType', regex: '[Ii]tem'}
+        ],
+        summarizer: {type: 'keyValue', key: 'id'}
+    },
+    {
+        predicates: [
+            {type: 'keysPresent', keys: ['apiType', 'status']},
+            {type: 'valueRegex', key: 'apiType', regex: 'paymentAuthorization'}
+        ],
+        summarizer: {type: 'keyValue', key: 'status'}
+    },
+    {
+        predicates: [
+            {type: 'anyKeyPresent', keys: ['type', 'name']},
+            {type: 'valueRegex', key: 'apiType', regex: '[Ee]vent'}
+        ],
+        summarizer: {type: 'joinedValues', keys: ['type', 'name']}
+    }
+];
+
+const DEFAULT_CATCHALL_CONFIGS = [
+    {
+        predicates: [
+            {type: 'keysPresent', keys: ['apiType', 'status']},
+        ],
+        summarizer: {type: 'keyValue', key: 'status'}
+    },
+    {
+        predicates: [
+            {type: 'keysPresent', keys: ['apiType', 'id']},
+        ],
+        summarizer: {type: 'keyValue', key: 'id'}
+    },
+    {
+        predicates: [
             {type: 'simpleObject', keysToIgnore: ['apiType']}
         ],
         summarizer: {type: 'simpleObject', keysToIgnore: ['apiType']}
     }
+];
+
+const DEFAULT_SUMMARIZE_CONFIGS = [
+    ...DEFAULT_SPECIFIC_CONFIGS,
+    ...DEFAULT_CATCHALL_CONFIGS
 ];
 
 // Listen for messages from content scripts, popup, and options page
@@ -77,12 +118,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         chrome.storage.sync.get(['useDefaultConfig', 'useCustomConfig', 'customConfig'], function(result) {
             let configuration = [];
             
-            if (result.useDefaultConfig !== false) { // Default to true if not set
-                configuration = configuration.concat(DEFAULT_SUMMARIZE_CONFIGS);
-            }
-            
             if (result.useCustomConfig && result.customConfig && Array.isArray(result.customConfig)) {
                 configuration = configuration.concat(result.customConfig);
+            }
+            
+            if (result.useDefaultConfig !== false) { // Default to true if not set
+                configuration = configuration.concat(DEFAULT_SUMMARIZE_CONFIGS);
             }
             
             sendResponse(configuration);

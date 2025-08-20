@@ -678,6 +678,10 @@ function JSONPredicate(config) {
             if (!config.keys) throw new Error('keys is required');
             this.keys = config.keys;
             break;
+        case 'anyKeyPresent':
+            if (!config.keys) throw new Error('keys is required');
+            this.keys = config.keys;
+            break;
         case 'valueRegex':
             if (!config.key) throw new Error('key is required');
             if (!config.regex) throw new Error('regex is required');
@@ -698,6 +702,8 @@ JSONPredicate.prototype.test = function (value) {
         switch (this.type) {
             case 'keysPresent':
                 return this.keys.every(key => value[key] !== void 0);
+            case 'anyKeyPresent':
+                return this.keys.some(key => value[key] !== void 0);
             case 'valueRegex':
                 return this.regex.test(value[this.key]);
             case 'simpleObject':

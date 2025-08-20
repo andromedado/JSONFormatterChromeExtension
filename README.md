@@ -38,6 +38,8 @@ The configuration uses an array of objects with `predicates` and `summarizers`:
 
 - **keysPresent**: Checks if specific keys exist in the object
   - `keys` (array): List of keys that must be present
+- **anyKeyPresent**: Checks if any of the specified keys exist in the object
+  - `keys` (array): List of keys to check
 - **valueRegex**: Tests if a key's value matches a regular expression
   - `key` (string): The key to test
   - `regex` (string): Regular expression pattern to match against
