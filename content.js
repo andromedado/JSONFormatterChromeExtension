@@ -579,7 +579,8 @@ Application.prototype.writeBaseHTML = function () {
     // Remove all content from the current document.body
     document.body.innerHTML = '';
     // Add a <style> tag to the document <head> with the base styles
-    el('style', this.getStyle(), document.head, {type: 'text/css'});
+    const styleEl = el('style', void 0, document.head, {type: 'text/css'});
+    styleEl.textContent = this.getStyle();
     document.title = "Formatted JSON";
     // Add favicon to the document head
     const favicon = document.querySelector('link[rel="icon"]');
