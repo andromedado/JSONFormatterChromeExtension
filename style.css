@@ -189,3 +189,6 @@ td {
     width: 150px;
 }
 
+dd {
+    margin-bottom: 1em;
+}

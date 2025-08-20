@@ -63,6 +63,18 @@ function initIfReady() {
         return;
     }
 
+    const styleEl = el('style', void 0, void 0, {
+        type: 'text/css'
+    });
+    // Insert the style tag as the first child of the header element
+    const header = document.querySelector('head');
+    header.insertBefore(styleEl, header.firstChild);
+    chrome.runtime.sendMessage({message: 'getConfigs'}, function(response) {
+        if (!chrome.runtime.lastError) {
+            styleEl.textContent = response.style;
+        }
+    });
+
     defaultConfigEl.value = JSON.stringify(DEFAULT_SUMMARIZE_CONFIGS, null, 2);
     chrome.storage.sync.get(['customConfig', 'useDefaultConfig', 'useCustomConfig', 'everSaved', 'booleanConfigs'], function(result) {
         if (result.customConfig) {
