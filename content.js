@@ -407,12 +407,19 @@ Application.prototype.consume = function (json, currentDepth) {
         }
     } else if (isObject(json)) {
         const keys = [].slice.call(Object.keys(json));
-        if (this.booleanConfigurations.alphabetizeKeys) {
-            keys.sort();
-        }
         if (keys.length === 0) {
             addSimpleRow(void 0, '[Empty Object]', true, true);
         } else {
+            if (this.booleanConfigurations.alphabetizeKeys) {
+                keys.sort();
+            }
+            if (this.booleanConfigurations.hoistIdToTop) {
+                const idKeyIndex = keys.indexOf('id');
+                if (idKeyIndex !== -1) {
+                    keys.splice(idKeyIndex, 1);
+                    keys.unshift('id');
+                }
+            }
             for (const key of keys) {
                 const value = json[key];
                 if (isArrayOrObject(value)) {

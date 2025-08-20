@@ -7,6 +7,11 @@ const BOOLEAN_CONFIGS = [
         defaultValue: false
     },
     {
+        name: 'hoistIdToTop',
+        description: 'If the ID key is present, move it to the top of the object',
+        defaultValue: false
+    },
+    {
         name: 'jumpToComplexRootKey',
         description: 'If no breadcrumbs are specified in the hash, jump to the first complex root object on load',
         defaultValue: false

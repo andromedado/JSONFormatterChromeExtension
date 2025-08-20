@@ -73,19 +73,20 @@ function initIfReady() {
         enforceCustomConfig();
 
         for (const config of BOOLEAN_CONFIGS) {
-            const li = el('li', void 0, booleanConfigsEl);
+            const dt = el('dt', void 0, booleanConfigsEl);
             let checked = result.booleanConfigs?.[config.name]?.currentValue;
             if (checked === void 0) {
                 checked = config.defaultValue;
             }
-            const label = el('label', void 0, li);
+            const label = el('label', void 0, dt);
             const input = el('input', void 0, label, {
                 class: 'boolean-config',
                 type: 'checkbox'
             });
             input.checked = checked;
             input.dataset.configName = config.name;
-            el('span', config.description, label);
+            el('span', config.name, label);
+            el('dd', config.description, booleanConfigsEl);
             //checkbox.addEventListener('change', () => {
         }
     });
