@@ -1,5 +1,6 @@
 let DEFAULT_SUMMARIZE_CONFIGS;
 let BOOLEAN_CONFIGS;
+let COLOR_CONFIGS;
 let domLoaded = false;
 
 let id = 1;
@@ -28,9 +29,12 @@ chrome.runtime.sendMessage({message: 'getAllOptions'}, function(response) {
     if (chrome.runtime.lastError) {
         console.error('Error getting default configs:', chrome.runtime.lastError);
         DEFAULT_SUMMARIZE_CONFIGS = [];
+        BOOLEAN_CONFIGS = [];
+        COLOR_CONFIGS = [];
     } else {
         DEFAULT_SUMMARIZE_CONFIGS = response.DEFAULT_SUMMARIZE_CONFIGS || [];
         BOOLEAN_CONFIGS = response.BOOLEAN_CONFIGS || [];
+        COLOR_CONFIGS = response.COLOR_CONFIGS || [];
     }
     initIfReady();
 });
@@ -48,6 +52,8 @@ const useCustomConfigEl = document.getElementById('useCustomConfig');
 const saveBtn = document.getElementById('saveBtn');
 const statusDiv = document.getElementById('status');
 const booleanConfigsEl = document.getElementById('booleanConfigs');
+const colorConfigsEl = document.getElementById('colorConfigs');
+const resetBtn = document.getElementById('resetBtn');
 
 function enforceCustomConfig() {
     if (useCustomConfigEl.checked) {
@@ -57,26 +63,34 @@ function enforceCustomConfig() {
     }
 }
 
+const lazyElements = {};
+
+function refreshStyle() {
+    if (lazyElements.styleEl) {
+        chrome.runtime.sendMessage({message: 'getConfigs'}, function(response) {
+            if (!chrome.runtime.lastError) {
+                lazyElements.styleEl.textContent = response.style;
+            }
+        });
+    }
+}
+
 // Load configuration from storage
 function initIfReady() {
     if (!domLoaded || !DEFAULT_SUMMARIZE_CONFIGS) {
         return;
     }
 
-    const styleEl = el('style', void 0, void 0, {
+    lazyElements.styleEl = el('style', void 0, void 0, {
         type: 'text/css'
     });
     // Insert the style tag as the first child of the header element
     const header = document.querySelector('head');
-    header.insertBefore(styleEl, header.firstChild);
-    chrome.runtime.sendMessage({message: 'getConfigs'}, function(response) {
-        if (!chrome.runtime.lastError) {
-            styleEl.textContent = response.style;
-        }
-    });
+    header.insertBefore(lazyElements.styleEl, header.firstChild);
+    refreshStyle();
 
     defaultConfigEl.value = JSON.stringify(DEFAULT_SUMMARIZE_CONFIGS, null, 2);
-    chrome.storage.sync.get(['customConfig', 'useDefaultConfig', 'useCustomConfig', 'everSaved', 'booleanConfigs'], function(result) {
+    chrome.storage.sync.get(['customConfig', 'useDefaultConfig', 'useCustomConfig', 'everSaved', 'booleanConfigs', 'colorConfigs'], function(result) {
         if (result.customConfig) {
             customConfigEl.value = JSON.stringify(result.customConfig, null, 2);
         }
@@ -101,6 +115,19 @@ function initIfReady() {
             el('dd', config.description, booleanConfigsEl);
             //checkbox.addEventListener('change', () => {
         }
+
+        for (const config of COLOR_CONFIGS) {
+            const dt = el('dt', void 0, colorConfigsEl);
+            const label = el('label', void 0, dt);
+            const input = el('input', void 0, label, {
+                class: 'color-config',
+                type: 'color'
+            });
+            input.value = result.colorConfigs?.[config.key]?.currentValue || config.defaultValue;
+            input.dataset.configKey = config.key;
+            el('span', config.name, label);
+            el('dd', config.description, colorConfigsEl);
+        }
     });
 }
 
@@ -111,6 +138,7 @@ function saveConfig() {
     const useCustomConfig = useCustomConfigEl.checked;
     let customConfigValue = null;
     let booleanConfigs = {};
+    let colorConfigs = {};
 
     try {
         if (customConfigText) {
@@ -139,11 +167,19 @@ function saveConfig() {
                 currentValue: input.checked
             };
         }
+
+        for (const input of document.querySelectorAll('.color-config')) {
+            const configKey = input.dataset.configKey;
+            colorConfigs[configKey] = {
+                currentValue: input.value
+            };
+        }
             
         // Save to storage
         chrome.storage.sync.set({
             customConfig: customConfigValue,
             booleanConfigs,
+            colorConfigs,
             useDefaultConfig,
             useCustomConfig,
             everSaved: true
@@ -162,6 +198,20 @@ function saveConfig() {
     }
 }
 
+function resetConfig() {
+    if (confirm('Are you sure you want to reset to defaults?')) {
+        chrome.storage.sync.set({
+            customConfig: null,
+            booleanConfigs: {},
+            colorConfigs: {},
+            useDefaultConfig: true,
+            useCustomConfig: false,
+            everSaved: false
+        });
+        window.location.reload();
+    }
+}
+
 // Show status message
 function showStatus(message, type) {
     statusDiv.textContent = message;
@@ -177,6 +227,7 @@ function showStatus(message, type) {
 // Event listeners
 saveBtn.addEventListener('click', saveConfig);
 useCustomConfig.addEventListener('change', enforceCustomConfig);
+resetBtn.addEventListener('click', resetConfig);
 
 // Load configuration when page loads
 document.addEventListener('DOMContentLoaded', domContentLoaded); 

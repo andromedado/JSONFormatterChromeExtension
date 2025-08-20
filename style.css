@@ -84,7 +84,7 @@ table {
     height: 1.7em;
 }
 
-h1 {
+.breadcrumbs h1 {
     margin: 0.1em 0;
     font-size: 0.4em;
 }
@@ -191,4 +191,13 @@ td {
 
 dd {
     margin-bottom: 1em;
+}
+
+#colorConfigs dt {
+    vertical-align: middle;
+}
+
+#colorConfigs dt span {
+    display: inline-block;
+    margin-left: 0.5em;
 }

@@ -132,12 +132,44 @@ const DEFAULT_SUMMARIZE_CONFIGS = [
     ...DEFAULT_CATCHALL_CONFIGS
 ];
 
+const COLOR_CONFIGS = [ {
+    type: 'background-color',
+    selector: 'body',
+    key: 'bodyBackgroundColor',
+    name: 'Page Background Color',
+    description: 'The background color of the page',
+    defaultValue: '#EEEEEE'
+}, {
+    type: 'color',
+    selector: 'body',
+    key: 'bodyColor',
+    name: 'Page Text Color',
+    description: 'The base text color for the page',
+    defaultValue: '#000000'
+}, {
+    type: 'background-color',
+    selector: '.active',
+    key: 'activeBackgroundColor',
+    name: 'Active Background Color',
+    description: 'The background color of the active element',
+    defaultValue: '#FFF9C4'
+}, {
+    type: 'color',
+    selector: '.active',
+    key: 'activeTextColor',
+    name: 'Active Text Color',
+    description: 'The text color of the active element',
+    defaultValue: '#000000'
+} ];
+
+
 // Listen for messages from content scripts, popup, and options page
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.message === 'getAllOptions') {
         sendResponse({
             DEFAULT_SUMMARIZE_CONFIGS,
-            BOOLEAN_CONFIGS
+            BOOLEAN_CONFIGS,
+            COLOR_CONFIGS
         });
         return true; // Keep the message channel open for async response
     }
@@ -145,7 +177,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.message === 'getConfigs') {
         // Return both default and custom configs based on storage settings
         const storagePromise = new Promise((resolve) => {
-            chrome.storage.sync.get(['useDefaultConfig', 'useCustomConfig', 'customConfig', 'booleanConfigs'], function(result) {
+            chrome.storage.sync.get(['useDefaultConfig', 'useCustomConfig', 'customConfig', 'booleanConfigs', 'colorConfigs'], function(result) {
                 let summarizationConfiguration = [];
                 
                 if (result.useCustomConfig && result.customConfig && Array.isArray(result.customConfig)) {
@@ -166,7 +198,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 
                 resolve({
                     summarizationConfiguration,
-                    booleanConfigurations
+                    booleanConfigurations, 
+                    colorConfigurations: result.colorConfigs || {}
                 });
             });
         });
@@ -181,6 +214,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         });
 
         Promise.all([storagePromise, stylePromise]).then(([storage, style]) => {
+
+            for (const config of COLOR_CONFIGS) {
+                const value = storage.colorConfigurations?.[config.key]?.currentValue || config.defaultValue;
+                style = style + `\n${config.selector} { ${config.type}: ${value}; }`;
+            }
+
             sendResponse({
                 ...storage,
                 style

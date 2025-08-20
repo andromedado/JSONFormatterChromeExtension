@@ -23,7 +23,6 @@
             margin-bottom: 20px;
             border-bottom: 2px solid #007acc;
             padding-bottom: 10px;
-            font-size: 3em;
         }
         .none { display: none; }
         .description {
@@ -35,7 +34,7 @@
             margin-bottom: 20px;
         }
         label {
-            display: block;
+            display: inline-block;
             margin-bottom: 8px;
             font-weight: 600;
             color: #333;
@@ -155,7 +154,7 @@
             <dl id="booleanConfigs">
             </dl>
             <h3>Colors</h3>
-            <div id="colors"></div>
+            <dl id="colorConfigs"></dl>
         </div>
         
         <h2>JSON Object Summarization</h2>
@@ -234,6 +233,7 @@
         
         <div class="button-group">
             <button class="btn-primary" id="saveBtn">Save Configuration</button>
+            <button class="btn-danger" id="resetBtn">Reset to Defaults</button>
         </div>
         
         <div id="status" class="status"></div>
