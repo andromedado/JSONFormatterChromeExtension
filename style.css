@@ -4,154 +4,187 @@ body {
     background-color: #EEE;
     font-size: 0.8em;
 }
+
 table {
-border-collapse: collapse;
+    border-collapse: collapse;
 }
+
 .copy-to-clipboard {
-width: 15em;
-text-align: center;
-border: none;
-background-color: transparent;
-color: #000;
-font-size: 0.8em;
-margin-left: 1em;
+    width: 15em;
+    text-align: center;
+    border: none;
+    background-color: transparent;
+    color: #000;
+    font-size: 0.8em;
+    margin-left: 1em;
 }
+
 .copy-all {
-float: right;
+    float: right;
 }
+
 .copy-to-clipboard.copied {
-background-color:rgb(202, 255, 196);
+    background-color: rgb(202, 255, 196);
 }
+
 .finder {
-position: fixed;
-top: 0;
-right: 2em;
-width: 20em;
-z-index: 1000;
-background-color: #FFF;
-padding: 0.5em;
-border: 1px solid #ccc;
-border-top: none;
+    position: fixed;
+    top: 0;
+    right: 2em;
+    width: 20em;
+    z-index: 1000;
+    background-color: #FFF;
+    padding: 0.5em;
+    border: 1px solid #ccc;
+    border-top: none;
 }
+
 .finder p {
-margin: 0.25em 0;
+    margin: 0.25em 0;
 }
+
 .finder input {
-width: 90%;
-box-sizing: border-box;
-background-color: #FFF;
-display:inline-block;
-color: #000;
-border-radius: 0px;
-outline: none;
+    width: 90%;
+    box-sizing: border-box;
+    background-color: #FFF;
+    display: inline-block;
+    color: #000;
+    border-radius: 0px;
+    outline: none;
 }
+
 .finder .result-counter {
-position: absolute;
-width: 85%;
-left: 0;
-margin-top: 0.25em;
-text-align: right;
+    position: absolute;
+    width: 85%;
+    left: 0;
+    margin-top: 0.25em;
+    text-align: right;
 }
+
 .finder .close {
-width: 10%;
-cursor: pointer;
-text-align: right;
-display:inline-block;
+    width: 10%;
+    cursor: pointer;
+    text-align: right;
+    display: inline-block;
 }
+
 .finder .no-results {
-font-style: italic;
+    font-style: italic;
 }
+
 .breadcrumbs {
-position: fixed;
-top: 0;
-left: 0;
-right: 0;
-z-index: 1000;
-background-color:rgb(250, 250, 250);
-padding: 0.15em 1em;
-border-bottom: 1px solid #ccc;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background-color: rgb(250, 250, 250);
+    padding: 0.15em 1em;
+    border-bottom: 1px solid #ccc;
 }
+
 h1 {
-margin: 0.1em 0;
-font-size: 0.4em;
+    margin: 0.1em 0;
+    font-size: 0.4em;
 }
+
 .none {
-display: none;
+    display: none;
 }
+
 .json-table {
     margin: 0 0 1em;
     display: none;
-    width:100%;
+    width: 100%;
 }
+
 .json-table-anchor {
     cursor: ew-resize;
     width: 2px;
     min-width: 2px;
     background-color: #ccc;
     display: none;
-    padding:0;
+    padding: 0;
 }
+
 .visible + .json-table-anchor {
-display: table-cell;
+    display: table-cell;
 }
+
 .json-table.visible {
-display: table;
+    display: table;
 }
+
 .json-table-content {
-padding-top: 1.5em;
+    padding-top: 1.5em;
 }
+
 .json-table-content.visible .sizer {
-min-width: 5em;
+    min-width: 5em;
 }
+
 .json-table-anchor .sizer {
-height: 100vh;
+    height: 100vh;
 }
+
 td {
-vertical-align: top;
+    vertical-align: top;
 }
-.key, .value {
-padding: 0.25em;
-vertical-align: top;
-}
-.key {
-text-align: left;
-padding-right: 0.5em;
-}
+
+.key,
 .value {
-text-align: right;
+    padding: 0.25em;
+    vertical-align: top;
 }
+
+.key {
+    text-align: left;
+    padding-right: 0.5em;
+}
+
+.value {
+    text-align: right;
+}
+
 .active {
-background-color: #FFF9C4;
-color: #000;
+    background-color: #FFF9C4;
+    color: #000;
 }
+
 .active ::selection {
-background-color:rgb(255, 185, 87);
-color: #000;
+    background-color: rgb(255, 185, 87);
+    color: #000;
 }
+
 .jsoned {
-color:rgb(185, 97, 97);
-max-width: 700px;/* this is not strict on table cells, but gives browser a hint about when to start wrapping */
-overflow-wrap: break-word;
+    color: rgb(185, 97, 97);
+    max-width: 700px; /* this is not strict on table cells, but gives browser a hint about when to start wrapping */
+    overflow-wrap: break-word;
 }
+
 .raw {
-color:rgb(97, 98, 185);
+    color: rgb(97, 98, 185);
 }
+
 .summary {
-font-style: italic;
-display: inline-block;
-margin-right: 1em;
+    font-style: italic;
+    display: inline-block;
+    margin-right: 1em;
 }
+
 .date {
-white-space: nowrap;
+    white-space: nowrap;
 }
+
 #mouse-position {
-position: fixed;
-bottom: 0;
-left: 0;
-z-index: 1000;
-background-color: #EEE;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    z-index: 1000;
+    background-color: #EEE;
 }
+
 .right-padding {
-width: 150px;
+    width: 150px;
 }
 
