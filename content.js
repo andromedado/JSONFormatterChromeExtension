@@ -176,6 +176,7 @@ function Application(booleanConfigurations) {
     this.rootRow = el('tr', void 0, el('tbody', void 0, el('table', void 0, html, {class: 'root-table'})));
     this.columns = [];
     this.summarizers = [];
+    this.complexRootKeys = [];
     this.getColumn(0);//initialize the first column
 }
 
@@ -371,6 +372,9 @@ Application.prototype.consume = function (json, currentDepth) {
     };
 
     const addRowWithChild = (key, value, omitFromLookup) => {
+        if (currentDepth === 0) {
+            this.complexRootKeys.push(key);
+        }
         const valueIsArray = isArray(value);
         const childTypeHint = valueIsArray ? `[${value.length}]` : '{}';//`{${Object.keys(value).length}}`;
         const karat = el('span');
@@ -482,7 +486,10 @@ Application.prototype.init = function (jsonString) {
     document.body.addEventListener('keydown', this.keyHandler.bind(this));
     document.body.addEventListener('keyup', this.keyHandler.bind(this));
 
-    const hash = (location.hash + '').trim().replace(/^#\.?/, '');
+    let hash = (location.hash + '').trim().replace(/^#\.?/, '');
+    if (!hash && this.complexRootKeys.length > 0 && this.booleanConfigurations.jumpToComplexRootKey) {
+        hash = `${this.complexRootKeys[0]}`;
+    }
     if (hash) {
         this.loadBreadcrumbs(hash);
     } else {

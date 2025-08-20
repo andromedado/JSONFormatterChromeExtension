@@ -5,6 +5,11 @@ const BOOLEAN_CONFIGS = [
         name: 'alphabetizeKeys',
         description: 'Alphabetize keys in the formatted JSON',
         defaultValue: false
+    },
+    {
+        name: 'jumpToComplexRootKey',
+        description: 'If no breadcrumbs are specified in the hash, jump to the first complex root object on load',
+        defaultValue: false
     }
 ];
 
