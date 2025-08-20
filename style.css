@@ -81,6 +81,7 @@ table {
     background-color: rgb(250, 250, 250);
     padding: 0.15em 1em;
     border-bottom: 1px solid #ccc;
+    height: 1.7em;
 }
 
 h1 {
@@ -116,7 +117,7 @@ h1 {
 }
 
 .json-table-content {
-    padding-top: 1.5em;
+    padding-top: 2em;
 }
 
 .json-table-content.visible .sizer {
