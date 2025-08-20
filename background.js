@@ -103,3 +103,8 @@ chrome.runtime.onInstalled.addListener((details) => {
         });
     }
 });
+
+// Handle action button click - open options page
+chrome.action.onClicked.addListener(() => {
+    chrome.runtime.openOptionsPage();
+});
