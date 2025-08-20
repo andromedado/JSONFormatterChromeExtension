@@ -168,8 +168,9 @@ Finder.prototype.init = function () {
     });
 }
 
-function Application(booleanConfigurations) {
-    this.booleanConfigurations = booleanConfigurations;
+function Application(appConfigs) {
+    this.booleanConfigurations = appConfigs.booleanConfigurations;
+    this.style = appConfigs.style;
     const html = el('div');
     this.el = html;
     this.breadcrumbsEl = el('div', void 0, html, {class: 'breadcrumbs'});
@@ -568,188 +569,28 @@ Application.prototype.registerSummarizer = function (summarizer, predicates) {
     this.summarizers.push({summarizer, predicates});
 };
 
-Application.prototype.baseStyle = `
-body {
-  font-family: Courier New, Courier, monospace;
-  color: #000;
-  background-color: #EEE;
-  font-size: 0.8em;
-}
-table {
-  border-collapse: collapse;
-}
-.copy-to-clipboard {
-  width: 15em;
-  text-align: center;
-  border: none;
-  background-color: transparent;
-  color: #000;
-  font-size: 0.8em;
-  margin-left: 1em;
-}
-.copy-all {
-  float: right;
-}
-.copy-to-clipboard.copied {
-  background-color:rgb(202, 255, 196);
-}
-.finder {
-  position: fixed;
-  top: 0;
-  right: 2em;
-  width: 20em;
-  z-index: 1000;
-  background-color: #FFF;
-  padding: 0.5em;
-  border: 1px solid #ccc;
-  border-top: none;
-}
-.finder p {
-  margin: 0.25em 0;
-}
-.finder input {
-  width: 90%;
-  box-sizing: border-box;
-  background-color: #FFF;
-  display:inline-block;
-  color: #000;
-  border-radius: 0px;
-  outline: none;
-}
-.finder .result-counter {
-  position: absolute;
-  width: 85%;
-  left: 0;
-  margin-top: 0.25em;
-  text-align: right;
-}
-.finder .close {
-  width: 10%;
-  cursor: pointer;
-  text-align: right;
-  display:inline-block;
-}
-.finder .no-results {
-  font-style: italic;
-}
-.breadcrumbs {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-  background-color:rgb(250, 250, 250);
-  padding: 0.15em 1em;
-  border-bottom: 1px solid #ccc;
-}
-h1 {
-  margin: 0.1em 0;
-  font-size: 0.4em;
-}
-.none {
-  display: none;
-}
-.json-table {
-    margin: 0 0 1em;
-    display: none;
-    width:100%;
-}
-.json-table-anchor {
-    cursor: ew-resize;
-    width: 2px;
-    min-width: 2px;
-    background-color: #ccc;
-    display: none;
-    padding:0;
-}
-.visible + .json-table-anchor {
-  display: table-cell;
-}
-.json-table.visible {
-  display: table;
-}
-.json-table-content {
-  padding-top: 1.5em;
-}
-.json-table-content.visible .sizer {
-  min-width: 5em;
-}
-.json-table-anchor .sizer {
-  height: 100vh;
-}
-td {
-  vertical-align: top;
-}
-.key, .value {
-  padding: 0.25em;
-  vertical-align: top;
-}
-.key {
-  text-align: left;
-  padding-right: 0.5em;
-}
-.value {
-  text-align: right;
-}
-.active {
-  background-color: #FFF9C4;
-  color: #000;
-}
-.active ::selection {
-  background-color:rgb(255, 185, 87);
-  color: #000;
-}
-.jsoned {
-  color:rgb(185, 97, 97);
-  max-width: 700px;/* this is not strict on table cells, but gives browser a hint about when to start wrapping */
-  overflow-wrap: break-word;
-}
-.raw {
-  color:rgb(97, 98, 185);
-}
-.summary {
-  font-style: italic;
-  display: inline-block;
-  margin-right: 1em;
-}
-.date {
-  white-space: nowrap;
-}
-#mouse-position {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  z-index: 1000;
-  background-color: #EEE;
-}
-.right-padding {
-  width: 150px;
-}`;
-
 Application.prototype.getStyle = function () {
-    return this.baseStyle;
+    return this.style;
 };
 
-Application.prototype.getBaseHTML = function () {
-    return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAAAXNSR0IArs4c6QAAAIxlWElmTU0AKgAAAAgABQESAAMAAAABAAEAAAEaAAUAAAABAAAASgEbAAUAAAABAAAAUgExAAIAAAAHAAAAWodpAAQAAAABAAAAYgAAAAAAAABIAAAAAQAAAEgAAAABUGljYXNhAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAMKADAAQAAAABAAAAMAAAAACBQEUmAAAACXBIWXMAAAsTAAALEwEAmpwYAAAEGGlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNi4wLjAiPgogICA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPgogICAgICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyIKICAgICAgICAgICAgeG1sbnM6SXB0YzR4bXBFeHQ9Imh0dHA6Ly9pcHRjLm9yZy9zdGQvSXB0YzR4bXBFeHQvMjAwOC0wMi0yOS8iCiAgICAgICAgICAgIHhtbG5zOnBob3Rvc2hvcD0iaHR0cDovL25zLmFkb2JlLmNvbS9waG90b3Nob3AvMS4wLyIKICAgICAgICAgICAgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIj4KICAgICAgICAgPHRpZmY6WVJlc29sdXRpb24+NzI8L3RpZmY6WVJlc29sdXRpb24+CiAgICAgICAgIDx0aWZmOlhSZXNvbHV0aW9uPjcyPC90aWZmOlhSZXNvbHV0aW9uPgogICAgICAgICA8dGlmZjpPcmllbnRhdGlvbj4xPC90aWZmOk9yaWVudGF0aW9uPgogICAgICAgICA8SXB0YzR4bXBFeHQ6RGlnaXRhbFNvdXJjZUZpbGVUeXBlPmh0dHA6Ly9jdi5pcHRjLm9yZy9uZXdzY29kZXMvZGlnaXRhbHNvdXJjZXR5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">
-<title>Formatted JSON</title>
-<style type="text/css">
-${this.getStyle()}
-</style>
-</head>
-<body></body>
-</html>`;
-};
+Application.prototype.rawFavicon = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAAAXNSR0IArs4c6QAAAIxlWElmTU0AKgAAAAgABQESAAMAAAABAAEAAAEaAAUAAAABAAAASgEbAAUAAAABAAAAUgExAAIAAAAHAAAAWodpAAQAAAABAAAAYgAAAAAAAABIAAAAAQAAAEgAAAABUGljYXNhAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAMKADAAQAAAABAAAAMAAAAACBQEUmAAAACXBIWXMAAAsTAAALEwEAmpwYAAAEGGlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNi4wLjAiPgogICA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPgogICAgICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyIKICAgICAgICAgICAgeG1sbnM6SXB0YzR4bXBFeHQ9Imh0dHA6Ly9pcHRjLm9yZy9zdGQvSXB0YzR4bXBFeHQvMjAwOC0wMi0yOS8iCiAgICAgICAgICAgIHhtbG5zOnBob3Rvc2hvcD0iaHR0cDovL25zLmFkb2JlLmNvbS9waG90b3Nob3AvMS4wLyIKICAgICAgICAgICAgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIj4KICAgICAgICAgPHRpZmY6WVJlc29sdXRpb24+NzI8L3RpZmY6WVJlc29sdXRpb24+CiAgICAgICAgIDx0aWZmOlhSZXNvbHV0aW9uPjcyPC90aWZmOlhSZXNvbHV0aW9uPgogICAgICAgICA8dGlmZjpPcmllbnRhdGlvbj4xPC90aWZmOk9yaWVudGF0aW9uPgogICAgICAgICA8SXB0YzR4bXBFeHQ6RGlnaXRhbFNvdXJjZUZpbGVUeXBlPmh0dHA6Ly9jdi5pcHRjLm9yZy9uZXdzY29kZXMvZGlnaXRhbHNvdXJjZXR5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';
 
 Application.prototype.writeBaseHTML = function () {
-    document.open();
-    document.write(this.getBaseHTML());
-    document.close();
+    // Remove all content from the current document.body
+    document.body.innerHTML = '';
+    // Add a <style> tag to the document <head> with the base styles
+    el('style', this.getStyle(), document.head, {type: 'text/css'});
+    document.title = "Formatted JSON";
+    // Add favicon to the document head
+    const favicon = document.querySelector('link[rel="icon"]');
+    if (favicon) {
+        favicon.remove();
+    }
+    el('link', void 0, document.head, {
+        rel: 'icon',
+        type: 'image/png',
+        href: this.rawFavicon
+    });
 };
 
 const summarizeSimpleObject = (value, keysToIgnore) => {
@@ -880,9 +721,8 @@ async function initializeExtension() {
             // Load configuration from storage before proceeding
             const appConfigs = await loadConfigs();
             const summarizationConfiguration = appConfigs.summarizationConfiguration || [];
-            const booleanConfigurations = appConfigs.booleanConfigurations || {};
 
-            const application = new Application(booleanConfigurations);
+            const application = new Application(appConfigs);
 
             for (const summarizeConfig of summarizationConfiguration) {
                 const summarizer = new JSONSummarizer(summarizeConfig.summarizer);

@@ -144,28 +144,51 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     
     if (request.message === 'getConfigs') {
         // Return both default and custom configs based on storage settings
-        chrome.storage.sync.get(['useDefaultConfig', 'useCustomConfig', 'customConfig', 'booleanConfigs'], function(result) {
-            let summarizationConfiguration = [];
-            
-            if (result.useCustomConfig && result.customConfig && Array.isArray(result.customConfig)) {
-                summarizationConfiguration = summarizationConfiguration.concat(result.customConfig);
-            }
-            
-            if (result.useDefaultConfig !== false) { // Default to true if not set
-                summarizationConfiguration = summarizationConfiguration.concat(DEFAULT_SUMMARIZE_CONFIGS);
-            }
-
-            let booleanConfigurations = {};
-            for (const config of BOOLEAN_CONFIGS) {
-                booleanConfigurations[config.name] = result.booleanConfigs?.[config.name]?.currentValue;
-                if (booleanConfigurations[config.name] === void 0) {
-                    booleanConfigurations[config.name] = config.defaultValue;
+        const storagePromise = new Promise((resolve) => {
+            chrome.storage.sync.get(['useDefaultConfig', 'useCustomConfig', 'customConfig', 'booleanConfigs'], function(result) {
+                let summarizationConfiguration = [];
+                
+                if (result.useCustomConfig && result.customConfig && Array.isArray(result.customConfig)) {
+                    summarizationConfiguration = summarizationConfiguration.concat(result.customConfig);
                 }
-            }
-            
+                
+                if (result.useDefaultConfig !== false) { // Default to true if not set
+                    summarizationConfiguration = summarizationConfiguration.concat(DEFAULT_SUMMARIZE_CONFIGS);
+                }
+
+                let booleanConfigurations = {};
+                for (const config of BOOLEAN_CONFIGS) {
+                    booleanConfigurations[config.name] = result.booleanConfigs?.[config.name]?.currentValue;
+                    if (booleanConfigurations[config.name] === void 0) {
+                        booleanConfigurations[config.name] = config.defaultValue;
+                    }
+                }
+                
+                resolve({
+                    summarizationConfiguration,
+                    booleanConfigurations
+                });
+            });
+        });
+
+        const stylePromise = new Promise((resolve, reject) => {
+            const url = chrome.runtime.getURL('style.css');
+            fetch(url).then((response) => {
+                return response.text().then((text) => {
+                    resolve(text);
+                });
+            }).catch(reject);
+        });
+
+        Promise.all([storagePromise, stylePromise]).then(([storage, style]) => {
             sendResponse({
-                summarizationConfiguration,
-                booleanConfigurations
+                ...storage,
+                style
+            });
+        }).catch((e) => {
+            console.error(e);
+            sendResponse({
+                error: e.message
             });
         });
         return true; // Keep the message channel open for async response
