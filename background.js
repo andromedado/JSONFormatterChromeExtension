@@ -138,20 +138,38 @@ const COLOR_CONFIGS = [ {
     key: 'bodyBackgroundColor',
     name: 'Page Background Color',
     description: 'The background color of the page',
-    defaultValue: '#EEEEEE'
+    defaultValue: '#EEEEEE',
+    examples: [
+        {
+            text: 'This is page text',
+            rowClasses: ['body-text']
+        }
+    ]
 }, {
     type: 'color',
     selector: 'body',
     key: 'bodyColor',
     name: 'Page Text Color',
     description: 'The base text color for the page',
-    defaultValue: '#000000'
+    defaultValue: '#000000',
+    examples: [
+        {
+            text: 'This is page text',
+            rowClasses: ['body-text']
+        }
+    ]
 }, {
     type: 'background-color',
     selector: '.active',
     key: 'activeBackgroundColor',
     name: 'Active Background Color',
     description: 'The background color of the active element',
+    examples: [
+        {
+            text: 'This element is active',
+            rowClasses: ['active']
+        }
+    ],
     defaultValue: '#FFF9C4'
 }, {
     type: 'color',
@@ -159,6 +177,74 @@ const COLOR_CONFIGS = [ {
     key: 'activeTextColor',
     name: 'Active Text Color',
     description: 'The text color of the active element',
+    examples: [
+        {
+            text: 'This element is active',
+            rowClasses: ['active']
+        }
+    ],
+    defaultValue: '#000000'
+}, {
+    type: 'color',
+    selector: '.raw',
+    key: 'rawTextColor',
+    name: 'Type-Hint Text Color',
+    description: 'The text color of the nesting type-hints',
+    examples: [
+        {
+            text: 'NESTED-TYPE-EXAMPLE {} ▷',
+            rowClasses: ['raw']
+        },
+        {
+            text: 'ACTIVE-NESTED-TYPE-EXAMPLE {} ▷',
+            rowClasses: ['raw', 'active']
+        }
+    ],
+    defaultValue: '#6162b9'
+}, {
+    type: 'color',
+    selector: '.jsoned',
+    key: 'jsonedTextColor',
+    name: 'Simple ValueText Color',
+    description: 'The text color of the primitive values',
+    examples: [
+        {
+            text: '"This is a primitive value like string or number"',
+            rowClasses: ['jsoned', 'body-text']
+        },
+        {
+            text: '"This is an active primitive value"',
+            rowClasses: ['jsoned', 'active']
+        }
+    ],
+    defaultValue: '#b96161'
+}, {
+    type: 'background-color',
+    selector: '.active-selection',
+    key: 'activeSelectionBackgroundColor',
+    name: 'Active Selection Background Color',
+    description: 'The background color of selected text in active row',
+    examples: [
+        {
+            text: 'This element is active and selected',
+            textClasses: ['active-selection'],
+            rowClasses: ['active']
+        }
+    ],
+    defaultValue: '#ffb957'
+}, {
+    type: 'color',
+    selector: '.active-selection',
+    key: 'activeSelectionTextColor',
+    name: 'Active Selection Text Color',
+    description: 'The text color of selected text in active row',
+    examples: [
+        {
+            text: 'This element is active and selected',
+            textClasses: ['active-selection'],
+            rowClasses: ['active']
+        }
+    ],
     defaultValue: '#000000'
 } ];
 

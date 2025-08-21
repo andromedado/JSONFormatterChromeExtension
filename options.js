@@ -25,6 +25,12 @@ const el = (tag, content, parent, attrs) => {
     return element;
 };
 
+const DEFAULT_EXAMPLE = [
+    {
+        text: 'Example Element',
+    }
+];
+
 chrome.runtime.sendMessage({message: 'getAllOptions'}, function(response) {
     if (chrome.runtime.lastError) {
         console.error('Error getting default configs:', chrome.runtime.lastError);
@@ -127,6 +133,28 @@ function initIfReady() {
             input.dataset.configKey = config.key;
             el('span', config.name, label);
             el('dd', config.description, colorConfigsEl);
+            const examples = config.examples || DEFAULT_EXAMPLE;
+            for (const example of examples) {
+                const exampleText = el('span', example.text || 'Example Element');
+                exampleText.classList.add('example-text');
+                if (example.textClasses) {
+                    input.dataset.exampleTextClasses = example.textClasses.join('.');
+                    exampleText.classList.add(...example.textClasses);
+                }
+                const exampleDD = el('dd', exampleText, colorConfigsEl);
+                exampleDD.classList.add('example-row');
+                if (example.rowClasses) {
+                    input.dataset.exampleRowClasses = example.rowClasses.join('.');
+                    exampleDD.classList.add(...example.rowClasses);
+                }
+            }
+
+            input.addEventListener('change', (e) => {
+                const exampleTextClasses = e.target.dataset.exampleTextClasses;
+                document.querySelectorAll(`.${exampleTextClasses}`).forEach(el => el.style[config.type] = e.target.value);
+                const exampleRowClasses = e.target.dataset.exampleRowClasses;
+                document.querySelectorAll(`.${exampleRowClasses}`).forEach(el => el.style[config.type] = e.target.value);
+            });
         }
     });
 }
@@ -196,6 +224,7 @@ function saveConfig() {
         console.error(error);
         console.error(customConfigText);
     }
+    refreshStyle();
 }
 
 function resetConfig() {

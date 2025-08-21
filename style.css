@@ -14,6 +14,49 @@ body,
     background-color: rgb(202, 255, 196);
 }
 
+#finder,
+.finder {
+    background-color: #FFF;
+    border-color: #CCC;
+}
+
+#finder-input,
+.finder input {
+    color: #000;
+    background-color: #FFF;
+}
+
+#breadcrumbs,
+.breadcrumbs {
+    background-color: rgb(250, 250, 250);
+    border-color: #CCC;
+}
+
+#json-table-anchor,
+.json-table-anchor {
+    background-color: #ccc;
+}
+
+
+.active {
+    background-color: #FFF9C4;
+    color: #000;
+}
+
+.active-selection,
+.active ::selection {
+    background-color: rgb(255, 185, 87);
+    color: #000;
+}
+
+.jsoned {
+    color: #b96161;
+}
+
+.raw {
+    color: #6162b9;
+}
+
 body {
     font-family: Courier New, Courier, monospace;
     font-size: 0.8em;
@@ -42,9 +85,8 @@ table {
     right: 2em;
     width: 20em;
     z-index: 1000;
-    background-color: #FFF;
     padding: 0.5em;
-    border: 1px solid #ccc;
+    border: 1px solid;
     border-top: none;
 }
 
@@ -55,9 +97,7 @@ table {
 .finder input {
     width: 90%;
     box-sizing: border-box;
-    background-color: #FFF;
     display: inline-block;
-    color: #000;
     border-radius: 0px;
     outline: none;
 }
@@ -87,9 +127,8 @@ table {
     left: 0;
     right: 0;
     z-index: 1000;
-    background-color: rgb(250, 250, 250);
     padding: 0.15em 1em;
-    border-bottom: 1px solid #ccc;
+    border-bottom: 1px solid;
     height: 1.7em;
 }
 
@@ -112,7 +151,6 @@ table {
     cursor: ew-resize;
     width: 2px;
     min-width: 2px;
-    background-color: #ccc;
     display: none;
     padding: 0;
 }
@@ -156,24 +194,13 @@ td {
     text-align: right;
 }
 
-.active {
-    background-color: #FFF9C4;
-    color: #000;
-}
-
-.active ::selection {
-    background-color: rgb(255, 185, 87);
-    color: #000;
-}
-
 .jsoned {
-    color: rgb(185, 97, 97);
     max-width: 700px; /* this is not strict on table cells, but gives browser a hint about when to start wrapping */
     overflow-wrap: break-word;
 }
-
-.raw {
-    color: rgb(97, 98, 185);
+.jsoned.example-row {
+    max-width: unset;
+    overflow-wrap: unset;
 }
 
 .summary {
@@ -186,20 +213,17 @@ td {
     white-space: nowrap;
 }
 
-#mouse-position {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    z-index: 1000;
-    background-color: #EEE;
-}
-
 .right-padding {
     width: 150px;
 }
 
 dd {
-    margin-bottom: 1em;
+    padding: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+.example-row {
+    border: 2px dashed #CCC;
 }
 
 #colorConfigs dt {
@@ -216,13 +240,14 @@ dd {
     max-width: 800px;
     margin: 0 auto;
     padding: 20px;
+    background-color: inherit;
 }
 
 textarea {
     width: 100%;
     height: 400px;
     font-size: 12px;
-    border: 1px solid #ddd;
+    border: 1px solid;
     border-radius: 4px;
     padding: 10px;
     resize: vertical;
@@ -246,3 +271,37 @@ textarea {
     font-size: 11px;
 }
 
+
+.control-buttons {
+    min-height: 2em;
+    padding: 1em;
+    text-align: center;
+    background-color: inherit;
+}
+
+.control-buttons.controls {
+    border-top: 2px solid #CCC;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+#status {
+    position: fixed;
+    top:0;
+    left: 0;
+    right: 0;
+    padding: 1em;
+    background-color: #FFF;
+    text-align: center;
+    z-index: 1000;
+}
+
+#status.error {
+    background-color: #FCC;
+}
+
+#status.success {
+    background-color: #CFC;
+}
