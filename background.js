@@ -134,7 +134,7 @@ const DEFAULT_SUMMARIZE_CONFIGS = [
 
 const COLOR_CONFIGS = [ {
     type: 'background-color',
-    selector: 'body',
+    selector: 'body, body > div, .copy-to-clipboard, textarea',
     key: 'bodyBackgroundColor',
     name: 'Page Background Color',
     description: 'The background color of the page',
@@ -147,7 +147,7 @@ const COLOR_CONFIGS = [ {
     ]
 }, {
     type: 'color',
-    selector: 'body',
+    selector: 'body, body > div, .copy-to-clipboard, textarea',
     key: 'bodyColor',
     name: 'Page Text Color',
     description: 'The base text color for the page',
@@ -193,7 +193,7 @@ const COLOR_CONFIGS = [ {
     examples: [
         {
             text: 'NESTED-TYPE-EXAMPLE {} ▷',
-            rowClasses: ['raw']
+            rowClasses: ['raw', 'body-text']
         },
         {
             text: 'ACTIVE-NESTED-TYPE-EXAMPLE {} ▷',
@@ -220,7 +220,7 @@ const COLOR_CONFIGS = [ {
     defaultValue: '#b96161'
 }, {
     type: 'background-color',
-    selector: '.active-selection',
+    selector: '.active-selection, .active ::selection',
     key: 'activeSelectionBackgroundColor',
     name: 'Active Selection Background Color',
     description: 'The background color of selected text in active row',
@@ -234,7 +234,7 @@ const COLOR_CONFIGS = [ {
     defaultValue: '#ffb957'
 }, {
     type: 'color',
-    selector: '.active-selection',
+    selector: '.active-selection, .active ::selection',
     key: 'activeSelectionTextColor',
     name: 'Active Selection Text Color',
     description: 'The text color of selected text in active row',
