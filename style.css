@@ -1,7 +1,21 @@
+#page-background-color,
+body {
+    background-color: #EEE;
+}
+
+#page-color,
+body,
+.copy-to-clipboard {
+    color: #000;
+}
+
+#success-flicker,
+.copy-to-clipboard.copied {
+    background-color: rgb(202, 255, 196);
+}
+
 body {
     font-family: Courier New, Courier, monospace;
-    color: #000;
-    background-color: #EEE;
     font-size: 0.8em;
 }
 
@@ -14,17 +28,12 @@ table {
     text-align: center;
     border: none;
     background-color: transparent;
-    color: #000;
     font-size: 0.8em;
     margin-left: 1em;
 }
 
 .copy-all {
     float: right;
-}
-
-.copy-to-clipboard.copied {
-    background-color: rgb(202, 255, 196);
 }
 
 .finder {
@@ -200,4 +209,40 @@ dd {
 #colorConfigs dt span {
     display: inline-block;
     margin-left: 0.5em;
+    font-weight: bold;
 }
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+textarea {
+    width: 100%;
+    height: 400px;
+    font-size: 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.documentation ul {
+    margin: 0;
+    padding-left: 20px;
+}
+.documentation li {
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+.documentation ul ul {
+    margin-top: 5px;
+}
+.documentation code {
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-size: 11px;
+}
+
