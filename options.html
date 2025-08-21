@@ -4,142 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JSON Formatter Settings</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #333;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #007acc;
-            padding-bottom: 10px;
-        }
-        .description {
-            color: #666;
-            margin-bottom: 30px;
-            line-height: 1.5;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #333;
-        }
-        textarea {
-            width: 100%;
-            height: 400px;
-            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-            font-size: 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 10px;
-            resize: vertical;
-            box-sizing: border-box;
-        }
-        .button-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-        button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: background-color 0.2s;
-        }
-        .btn-primary {
-            background-color: #007acc;
-            color: white;
-        }
-        .btn-primary:hover {
-            background-color: #005a9e;
-        }
-        .btn-secondary {
-            background-color: #6c757d;
-            color: white;
-        }
-        .btn-secondary:hover {
-            background-color: #545b62;
-        }
-        .btn-danger {
-            background-color: #dc3545;
-            color: white;
-        }
-        .btn-danger:hover {
-            background-color: #c82333;
-        }
-        .status {
-            margin-top: 15px;
-            padding: 10px;
-            border-radius: 4px;
-            display: none;
-        }
-        .status.success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .status.error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        .example-link {
-            color: #007acc;
-            text-decoration: none;
-            margin-left: 10px;
-        }
-        .example-link:hover {
-            text-decoration: underline;
-        }
-        .documentation {
-            background-color: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 4px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-        .documentation h3 {
-            color: #495057;
-            margin-top: 0;
-            margin-bottom: 15px;
-            font-size: 16px;
-        }
-        .documentation ul {
-            margin: 0;
-            padding-left: 20px;
-        }
-        .documentation li {
-            margin-bottom: 8px;
-            line-height: 1.4;
-        }
-        .documentation ul ul {
-            margin-top: 5px;
-        }
-        .documentation code {
-            background-color: #e9ecef;
-            padding: 2px 4px;
-            border-radius: 3px;
-            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-            font-size: 11px;
-        }
-    </style>
 </head>
 <body>
     <div class="container">
@@ -147,14 +11,27 @@
         <div class="description">
             Configure how JSON objects are summarized and displayed. The configuration uses predicates to match JSON objects and summarizers to create readable descriptions.
         </div>
+
+        <h2>Display Configuration</h2>
+        <div class="form-group">
+            <dl id="booleanConfigs">
+            </dl>
+            <h3>Colors</h3>
+            <dl id="colorConfigs"></dl>
+        </div>
         
-        <h2>Summarization Configuration</h2>
+        <h2>JSON Object Summarization</h2>
         <div class="documentation">
             <h3>Predicate Types</h3>
             <ul>
                 <li><strong>keysPresent</strong>: Checks if specific keys exist in the object
                     <ul>
                         <li><code>keys</code> (array): List of keys that must be present</li>
+                    </ul>
+                </li>
+                <li><strong>anyKeyPresent</strong>: Checks if any of the specified keys exist in the object
+                    <ul>
+                        <li><code>keys</code> (array): List of keys to check</li>
                     </ul>
                 </li>
                 <li><strong>valueRegex</strong>: Tests if a key's value matches a regular expression
@@ -173,6 +50,11 @@
             
             <h3>Summarizer Types</h3>
             <ul>
+                <li><strong>static</strong>: Shows a static value
+                    <ul>
+                        <li><code>value</code> (string): The value to display</li>
+                    </ul>
+                </li>
                 <li><strong>keyValue</strong>: Shows the value of a specific key
                     <ul>
                         <li><code>key</code> (string): The key whose value to display</li>
@@ -180,7 +62,7 @@
                 </li>
                 <li><strong>joinedValues</strong>: Combines multiple key values with a separator
                     <ul>
-                        <li><code>keys</code> (array): List of keys to combine</li>
+                        <li><code>keys</code> (array): List of keys to combine (keys not present in object will be ignored)</li>
                         <li><code>joiner</code> (string, optional): Separator between values (default: "-")</li>
                     </ul>
                 </li>
@@ -198,20 +80,26 @@
                 </li>
             </ul>
         </div>
+
+        <h2><label for="useDefaultConfig">Default Summarization Configuration<input type="checkbox" id="useDefaultConfig" /></label></h2>
+        <div class="form-group">
+            <textarea id="defaultConfig" spellcheck="false" autocorrect="off" autocomplete="off" autocapitalize="off" readonly disabled></textarea>
+        </div>
         
         <div class="form-group">
-            <label for="configTextarea">
-                JSON Configuration
-            </label>
-            <textarea id="configTextarea" placeholder="Enter your JSON configuration here..." spellcheck="false" autocorrect="off" autocomplete="off" autocapitalize="off"></textarea>
+            <h2><label for="useCustomConfig">
+                Custom Summarization Configuration <input type="checkbox" id="useCustomConfig" />
+            </label></h2>
+            <textarea class="none" id="customConfig" placeholder="Enter your Custom Configuration here..." spellcheck="false" autocorrect="off" autocomplete="off" autocapitalize="off">[
+]</textarea>
         </div>
-        
-        <div class="button-group">
+        <div class="control-buttons placeholder"></div>
+        <div class="button-group control-buttons controls">
             <button class="btn-primary" id="saveBtn">Save Configuration</button>
-            <button class="btn-secondary" id="resetBtn">Reset to Default</button>
+            <button class="btn-danger" id="resetBtn">Reset to Defaults</button>
         </div>
         
-        <div id="status" class="status"></div>
+        <div id="status" class="status none"></div>
     </div>
     
     <script src="options.js"></script>

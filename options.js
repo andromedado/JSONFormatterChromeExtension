@@ -1,103 +1,217 @@
-// Default configuration that matches the original summarizeConfigs
-const DEFAULT_CONFIG = [
+let DEFAULT_SUMMARIZE_CONFIGS;
+let BOOLEAN_CONFIGS;
+let COLOR_CONFIGS;
+let domLoaded = false;
+
+let id = 1;
+const el = (tag, content, parent, attrs) => {
+    const element = document.createElement(tag);
+    if (content != void 0) {
+        if (/HTML/.test(Object.prototype.toString.call(content))) {
+            element.appendChild(content);
+        } else {
+            element.innerText = content;
+        }
+    }
+    if (parent) {
+        parent.appendChild(element);
+    }
+    if (attrs) {
+        for (const [key, value] of Object.entries(attrs)) {
+            element.setAttribute(key, value);
+        }
+    }
+    element.id = `json-${id++}`;
+    return element;
+};
+
+const DEFAULT_EXAMPLE = [
     {
-        predicates: [
-            {type: 'keysPresent', keys: ['apiType', 'code']},
-            {type: 'valueRegex', key: 'apiType', regex: '[Aa]ction'}
-        ],
-        summarizer: {type: 'keyValue', key: 'code'}
-    },
-    {
-        predicates: [
-            {type: 'keysPresent', keys: ['apiType', 'role', 'id']},
-            {type: 'valueRegex', key: 'apiType', regex: '[Pp]arty'}
-        ],
-        summarizer: {type: 'joinedValues', keys: ['role', 'id']}
-    },
-    {
-        predicates: [
-            {type: 'keysPresent', keys: ['apiType', 'numberOfUnits', 'timeUnit']},
-            {type: 'valueRegex', key: 'apiType', regex: '[Pp]eriod'}
-        ],
-        summarizer: {type: 'joinedValues', keys: ['numberOfUnits', 'timeUnit'], joiner: ' '}
-    },
-    {
-        predicates: [
-            {type: 'keysPresent', keys: ['apiType', 'sourceId', 'sourceType']},
-            {type: 'valueRegex', key: 'apiType', regex: '[Aa]nchor'}
-        ],
-        summarizer: {type: 'joinedValues', keys: ['sourceType', 'sourceId']}
-    },
-    {
-        predicates: [
-            {type: 'keysPresent', keys: ['apiType', 'type', 'status']},
-            {type: 'valueRegex', key: 'apiType', regex: '[Rr]eview'}
-        ],
-        summarizer: {type: 'joinedValues', keys: ['type', 'status']}
-    },
-    {
-        predicates: [
-            {type: 'keysPresent', keys: ['apiType', 'amount', 'currency']},
-            {type: 'valueRegex', key: 'apiType', regex: '[Ff]inancial'}
-        ],
-        summarizer: {type: 'financialAmount', amountKey: 'amount', currencyKey: 'currency'}
-    },
-    {
-        predicates: [
-            {type: 'simpleObject', keysToIgnore: ['apiType']}
-        ],
-        summarizer: {type: 'simpleObject', keysToIgnore: ['apiType']}
+        text: 'Example Element',
     }
 ];
 
+chrome.runtime.sendMessage({message: 'getAllOptions'}, function(response) {
+    if (chrome.runtime.lastError) {
+        console.error('Error getting default configs:', chrome.runtime.lastError);
+        DEFAULT_SUMMARIZE_CONFIGS = [];
+        BOOLEAN_CONFIGS = [];
+        COLOR_CONFIGS = [];
+    } else {
+        DEFAULT_SUMMARIZE_CONFIGS = response.DEFAULT_SUMMARIZE_CONFIGS || [];
+        BOOLEAN_CONFIGS = response.BOOLEAN_CONFIGS || [];
+        COLOR_CONFIGS = response.COLOR_CONFIGS || [];
+    }
+    initIfReady();
+});
+
+function domContentLoaded() {
+    domLoaded = true;
+    initIfReady();
+}
+
 // DOM elements
-const configTextarea = document.getElementById('configTextarea');
+const customConfigEl = document.getElementById('customConfig');
+const defaultConfigEl = document.getElementById('defaultConfig');
+const useDefaultConfigEl = document.getElementById('useDefaultConfig');
+const useCustomConfigEl = document.getElementById('useCustomConfig');
 const saveBtn = document.getElementById('saveBtn');
-const resetBtn = document.getElementById('resetBtn');
-//const clearBtn = document.getElementById('clearBtn');
-//const loadExampleBtn = document.getElementById('loadExample');
 const statusDiv = document.getElementById('status');
+const booleanConfigsEl = document.getElementById('booleanConfigs');
+const colorConfigsEl = document.getElementById('colorConfigs');
+const resetBtn = document.getElementById('resetBtn');
+
+function enforceCustomConfig() {
+    if (useCustomConfigEl.checked) {
+        customConfigEl.classList.remove('none');
+    } else {
+        customConfigEl.classList.add('none');
+    }
+}
+
+const lazyElements = {};
+
+function refreshStyle() {
+    if (lazyElements.styleEl) {
+        chrome.runtime.sendMessage({message: 'getConfigs'}, function(response) {
+            if (!chrome.runtime.lastError) {
+                lazyElements.styleEl.textContent = response.style;
+            }
+        });
+    }
+}
 
 // Load configuration from storage
-function loadConfig() {
-    chrome.storage.sync.get(['summarizeConfigs'], function(result) {
-        if (result.summarizeConfigs) {
-            configTextarea.value = JSON.stringify(result.summarizeConfigs, null, 2);
-        } else {
-            configTextarea.value = JSON.stringify(DEFAULT_CONFIG, null, 2);
+function initIfReady() {
+    if (!domLoaded || !DEFAULT_SUMMARIZE_CONFIGS) {
+        return;
+    }
+
+    lazyElements.styleEl = el('style', void 0, void 0, {
+        type: 'text/css'
+    });
+    // Insert the style tag as the first child of the header element
+    const header = document.querySelector('head');
+    header.insertBefore(lazyElements.styleEl, header.firstChild);
+    refreshStyle();
+
+    defaultConfigEl.value = JSON.stringify(DEFAULT_SUMMARIZE_CONFIGS, null, 2);
+    chrome.storage.sync.get(['customConfig', 'useDefaultConfig', 'useCustomConfig', 'everSaved', 'booleanConfigs', 'colorConfigs'], function(result) {
+        if (result.customConfig) {
+            customConfigEl.value = JSON.stringify(result.customConfig, null, 2);
+        }
+        useDefaultConfigEl.checked = result.useDefaultConfig || !result.everSaved;
+        useCustomConfigEl.checked = result.useCustomConfig;
+        enforceCustomConfig();
+
+        for (const config of BOOLEAN_CONFIGS) {
+            const dt = el('dt', void 0, booleanConfigsEl);
+            let checked = result.booleanConfigs?.[config.name]?.currentValue;
+            if (checked === void 0) {
+                checked = config.defaultValue;
+            }
+            const label = el('label', void 0, dt);
+            const input = el('input', void 0, label, {
+                class: 'boolean-config',
+                type: 'checkbox'
+            });
+            input.checked = checked;
+            input.dataset.configName = config.name;
+            el('span', config.name, label);
+            el('dd', config.description, booleanConfigsEl);
+            //checkbox.addEventListener('change', () => {
+        }
+
+        for (const config of COLOR_CONFIGS) {
+            const dt = el('dt', void 0, colorConfigsEl);
+            const label = el('label', void 0, dt);
+            const input = el('input', void 0, label, {
+                class: 'color-config',
+                type: 'color'
+            });
+            input.value = result.colorConfigs?.[config.key]?.currentValue || config.defaultValue;
+            input.dataset.configKey = config.key;
+            el('span', config.name, label);
+            el('dd', config.description, colorConfigsEl);
+            const examples = config.examples || DEFAULT_EXAMPLE;
+            for (const example of examples) {
+                const exampleText = el('span', example.text || 'Example Element');
+                exampleText.classList.add('example-text');
+                if (example.textClasses) {
+                    input.dataset.exampleTextClasses = example.textClasses.join('.');
+                    exampleText.classList.add(...example.textClasses);
+                }
+                const exampleDD = el('dd', exampleText, colorConfigsEl);
+                exampleDD.classList.add('example-row');
+                if (example.rowClasses) {
+                    input.dataset.exampleRowClasses = example.rowClasses.join('.');
+                    exampleDD.classList.add(...example.rowClasses);
+                }
+            }
+
+            input.addEventListener('change', (e) => {
+                const exampleTextClasses = e.target.dataset.exampleTextClasses;
+                document.querySelectorAll(`.${exampleTextClasses}`).forEach(el => el.style[config.type] = e.target.value);
+                const exampleRowClasses = e.target.dataset.exampleRowClasses;
+                document.querySelectorAll(`.${exampleRowClasses}`).forEach(el => el.style[config.type] = e.target.value);
+            });
         }
     });
 }
 
 // Save configuration to storage
 function saveConfig() {
-    const configText = configTextarea.value.trim();
-    
-    if (!configText) {
-        showStatus('Configuration cannot be empty', 'error');
-        return;
-    }
-    
+    const customConfigText = customConfigEl.value.trim();
+    const useDefaultConfig = useDefaultConfigEl.checked;
+    const useCustomConfig = useCustomConfigEl.checked;
+    let customConfigValue = null;
+    let booleanConfigs = {};
+    let colorConfigs = {};
+
     try {
-        const config = JSON.parse(configText);
-        
-        // Basic validation
-        if (!Array.isArray(config)) {
-            showStatus('Configuration must be an array', 'error');
-            return;
-        }
-        
-        // Validate each config item
-        for (let i = 0; i < config.length; i++) {
-            const item = config[i];
-            if (!item.predicates || !item.summarizer) {
-                showStatus(`Configuration item ${i + 1} must have 'predicates' and 'summarizer' properties`, 'error');
-                return;
+        if (customConfigText) {
+            customConfigValue = JSON.parse(customConfigText);
+            if (useCustomConfig) {
+                // Basic validation
+                if (!Array.isArray(customConfigValue)) {
+                    showStatus('Configuration must be an array', 'error');
+                    return;
+                }
+                
+                // Validate each config item
+                for (let i = 0; i < customConfigValue.length; i++) {
+                    const item = customConfigValue[i];
+                    if (!item.predicates || !item.summarizer) {
+                        showStatus(`Configuration item ${i + 1} must have 'predicates' and 'summarizer' properties`, 'error');
+                        return;
+                    }
+                }
             }
         }
-        
+
+        for (const input of document.querySelectorAll('.boolean-config')) {
+            const configName = input.dataset.configName;
+            booleanConfigs[configName] = {
+                currentValue: input.checked
+            };
+        }
+
+        for (const input of document.querySelectorAll('.color-config')) {
+            const configKey = input.dataset.configKey;
+            colorConfigs[configKey] = {
+                currentValue: input.value
+            };
+        }
+            
         // Save to storage
-        chrome.storage.sync.set({summarizeConfigs: config}, function() {
+        chrome.storage.sync.set({
+            customConfig: customConfigValue,
+            booleanConfigs,
+            colorConfigs,
+            useDefaultConfig,
+            useCustomConfig,
+            everSaved: true
+        }, function() {
             if (chrome.runtime.lastError) {
                 showStatus('Error saving configuration: ' + chrome.runtime.lastError.message, 'error');
             } else {
@@ -107,42 +221,24 @@ function saveConfig() {
         
     } catch (error) {
         showStatus('Invalid JSON: ' + error.message, 'error');
+        console.error(error);
+        console.error(customConfigText);
     }
+    refreshStyle();
 }
 
-// Reset to default configuration
 function resetConfig() {
-    if (confirm('Are you sure you want to reset to the default configuration? This will overwrite your current settings.')) {
-        configTextarea.value = JSON.stringify(DEFAULT_CONFIG, null, 2);
-        chrome.storage.sync.set({summarizeConfigs: DEFAULT_CONFIG}, function() {
-            if (chrome.runtime.lastError) {
-                showStatus('Error resetting configuration: ' + chrome.runtime.lastError.message, 'error');
-            } else {
-                showStatus('Configuration reset to default!', 'success');
-            }
+    if (confirm('Are you sure you want to reset to defaults?')) {
+        chrome.storage.sync.set({
+            customConfig: null,
+            booleanConfigs: {},
+            colorConfigs: {},
+            useDefaultConfig: true,
+            useCustomConfig: false,
+            everSaved: false
         });
+        window.location.reload();
     }
-}
-
-// Clear configuration (use empty array)
-function clearConfig() {
-    if (confirm('Are you sure you want to clear the configuration? This will disable all custom summaries.')) {
-        const emptyConfig = [];
-        configTextarea.value = JSON.stringify(emptyConfig, null, 2);
-        chrome.storage.sync.set({summarizeConfigs: emptyConfig}, function() {
-            if (chrome.runtime.lastError) {
-                showStatus('Error clearing configuration: ' + chrome.runtime.lastError.message, 'error');
-            } else {
-                showStatus('Configuration cleared!', 'success');
-            }
-        });
-    }
-}
-
-// Load example configuration
-function loadExample() {
-    configTextarea.value = JSON.stringify(DEFAULT_CONFIG, null, 2);
-    showStatus('Example configuration loaded. Click "Save Configuration" to apply it.', 'success');
 }
 
 // Show status message
@@ -159,9 +255,8 @@ function showStatus(message, type) {
 
 // Event listeners
 saveBtn.addEventListener('click', saveConfig);
+useCustomConfig.addEventListener('change', enforceCustomConfig);
 resetBtn.addEventListener('click', resetConfig);
-//clearBtn.addEventListener('click', clearConfig);
-//loadExampleBtn.addEventListener('click', loadExample);
 
 // Load configuration when page loads
-document.addEventListener('DOMContentLoaded', loadConfig); 
+document.addEventListener('DOMContentLoaded', domContentLoaded); 

@@ -1,67 +1,15 @@
 // content.js - This script runs on every page to check and reformat content.
 
-// Default configuration that will be used if no custom config is found
-const DEFAULT_SUMMARIZE_CONFIGS = [
-    {
-        predicates: [
-            {type: 'keysPresent', keys: ['apiType', 'code']},
-            {type: 'valueRegex', key: 'apiType', regex: '[Aa]ction'}
-        ],
-        summarizer: {type: 'keyValue', key: 'code'}
-    },
-    {
-        predicates: [
-            {type: 'keysPresent', keys: ['apiType', 'role', 'id']},
-            {type: 'valueRegex', key: 'apiType', regex: '[Pp]arty'}
-        ],
-        summarizer: {type: 'joinedValues', keys: ['role', 'id']}
-    },
-    {
-        predicates: [
-            {type: 'keysPresent', keys: ['apiType', 'numberOfUnits', 'timeUnit']},
-            {type: 'valueRegex', key: 'apiType', regex: '[Pp]eriod'}
-        ],
-        summarizer: {type: 'joinedValues', keys: ['numberOfUnits', 'timeUnit'], joiner: ' '}
-    },
-    {
-        predicates: [
-            {type: 'keysPresent', keys: ['apiType', 'sourceId', 'sourceType']},
-            {type: 'valueRegex', key: 'apiType', regex: '[Aa]nchor'}
-        ],
-        summarizer: {type: 'joinedValues', keys: ['sourceType', 'sourceId']}
-    },
-    {
-        predicates: [
-            {type: 'keysPresent', keys: ['apiType', 'type', 'status']},
-            {type: 'valueRegex', key: 'apiType', regex: '[Rr]eview'}
-        ],
-        summarizer: {type: 'joinedValues', keys: ['type', 'status']}
-    },
-    {
-        predicates: [
-            {type: 'keysPresent', keys: ['apiType', 'amount', 'currency']},
-            {type: 'valueRegex', key: 'apiType', regex: '[Ff]inancial'}
-        ],
-        summarizer: {type: 'financialAmount', amountKey: 'amount', currencyKey: 'currency'}
-    },
-    {
-        predicates: [
-            {type: 'simpleObject', keysToIgnore: ['apiType']}
-        ],
-        summarizer: {type: 'simpleObject', keysToIgnore: ['apiType']}
-    }
-];
-
 // Function to load configuration from storage
-function loadSummarizeConfigs() {
+function loadConfigs() {
     return new Promise((resolve) => {
-        chrome.storage.sync.get(['summarizeConfigs'], function(result) {
-            if (result.summarizeConfigs && Array.isArray(result.summarizeConfigs)) {
-                summarizeConfigs = result.summarizeConfigs;
+        chrome.runtime.sendMessage({message: 'getConfigs'}, function(response) {
+            if (chrome.runtime.lastError) {
+                console.error('Error getting configs:', chrome.runtime.lastError);
+                resolve({});
             } else {
-                summarizeConfigs = DEFAULT_SUMMARIZE_CONFIGS;
+                resolve(response || {});
             }
-            resolve(summarizeConfigs);
         });
     });
 }
@@ -220,13 +168,21 @@ Finder.prototype.init = function () {
     });
 }
 
-function Application() {
+function Application(appConfigs) {
+    this.booleanConfigurations = appConfigs.booleanConfigurations;
+    this.style = appConfigs.style;
     const html = el('div');
     this.el = html;
     this.breadcrumbsEl = el('div', void 0, html, {class: 'breadcrumbs'});
+    this.copyToClipboardEl = el('button', '📋 Copy All to Clipboard', this.breadcrumbsEl, {class: 'copy-to-clipboard copy-all'});
+    this.breadcrumbsSpan = el('span', void 0, this.breadcrumbsEl);
+    this.copyValueEl = el('button', '📋 Copy Value to Clipboard', this.breadcrumbsEl, {class: 'copy-to-clipboard copy-value'});
+    this.copyToClipboardEl.addEventListener('click', this.copyAllToClipboard.bind(this));
+    this.copyValueEl.addEventListener('click', this.copyValue.bind(this));
     this.rootRow = el('tr', void 0, el('tbody', void 0, el('table', void 0, html, {class: 'root-table'})));
     this.columns = [];
     this.summarizers = [];
+    this.complexRootKeys = [];
     this.getColumn(0);//initialize the first column
 }
 
@@ -303,7 +259,7 @@ Application.prototype.loadBreadcrumbs = function (hash) {
 
 Application.prototype.renderBreadcrumbs = function () {
     const breadcrumbs = getBreadcrumbs();
-    this.breadcrumbsEl.innerText = breadcrumbs
+    this.breadcrumbsSpan.innerText = breadcrumbs
     location.hash = breadcrumbs;
 };
 
@@ -377,6 +333,48 @@ Application.prototype.keyHandler = function (e) {
     }
 };
 
+Application.prototype.copyValue = function () {
+    const breadcrumbs = getBreadcrumbs().replace(/^\.|\.$/g, '').split('.');
+    let currentValue = this.rawJSON;
+    try {
+    for (const breadcrumb of breadcrumbs) {
+        if (/^\[\d+\]$/.test(breadcrumb)) {
+            currentValue = currentValue[parseInt(breadcrumb.slice(1, -1), 10)];
+        } else {
+            currentValue = currentValue[breadcrumb];
+            }
+        }
+    } catch (e) {
+        console.error('Error copying value:', e);
+    }
+    navigator.clipboard.writeText(JSON.stringify(currentValue, null, 2));
+
+    if (!this.copyValueEl.dataset.originalText) {
+        this.copyValueEl.dataset.originalText = this.copyValueEl.innerText;
+    }
+    this.copyValueEl.innerText = '📋 Copied!';
+    this.copyValueEl.classList.add('copied');
+    clearTimeout(this.copyValueRefreshTimeout);
+    this.copyValueRefreshTimeout = setTimeout(() => {
+        this.copyValueEl.innerText = this.copyValueEl.dataset.originalText;
+        this.copyValueEl.classList.remove('copied');
+    }, 1000);
+};
+
+Application.prototype.copyAllToClipboard = function () {
+    navigator.clipboard.writeText(JSON.stringify(this.rawJSON, null, 2));
+    if (!this.copyToClipboardEl.dataset.originalText) {
+        this.copyToClipboardEl.dataset.originalText = this.copyToClipboardEl.innerText;
+    }
+    this.copyToClipboardEl.innerText = '📋 Copied!';
+    this.copyToClipboardEl.classList.add('copied');
+    clearTimeout(this.copyAllRefreshTimeout);
+    this.copyAllRefreshTimeout = setTimeout(() => {
+        this.copyToClipboardEl.innerText = this.copyToClipboardEl.dataset.originalText;
+        this.copyToClipboardEl.classList.remove('copied');
+    }, 1000);
+};
+
 Application.prototype.addLookup = function (value, tr) {
     if (value !== void 0) {
         value = value + '';
@@ -386,6 +384,9 @@ Application.prototype.addLookup = function (value, tr) {
 };
 
 Application.prototype.consume = function (json, currentDepth) {
+    if (currentDepth === 0) {
+        this.rawJSON = json;
+    }
     const column = this.getColumn(currentDepth);
     const table = el('table', void 0, column, {class: 'json-table none'});
     table.dataset.column = currentDepth;
@@ -422,6 +423,9 @@ Application.prototype.consume = function (json, currentDepth) {
     };
 
     const addRowWithChild = (key, value, omitFromLookup) => {
+        if (currentDepth === 0) {
+            this.complexRootKeys.push(key);
+        }
         const valueIsArray = isArray(value);
         const childTypeHint = valueIsArray ? `[${value.length}]` : '{}';//`{${Object.keys(value).length}}`;
         const karat = el('span');
@@ -453,11 +457,22 @@ Application.prototype.consume = function (json, currentDepth) {
             }
         }
     } else if (isObject(json)) {
-        const keys = Object.keys(json);
+        const keys = [].slice.call(Object.keys(json));
         if (keys.length === 0) {
             addSimpleRow(void 0, '[Empty Object]', true, true);
         } else {
-            for (const [key, value] of Object.entries(json)) {
+            if (this.booleanConfigurations.alphabetizeKeys) {
+                keys.sort();
+            }
+            if (this.booleanConfigurations.hoistIdToTop) {
+                const idKeyIndex = keys.indexOf('id');
+                if (idKeyIndex !== -1) {
+                    keys.splice(idKeyIndex, 1);
+                    keys.unshift('id');
+                }
+            }
+            for (const key of keys) {
+                const value = json[key];
                 if (isArrayOrObject(value)) {
                     addRowWithChild(key, value);
                 } else {
@@ -515,9 +530,7 @@ Application.prototype.mouseUpHandler = function (e) {
 Application.prototype.init = function (jsonString) {
     const jsonData = JSON.parse(jsonString);
 
-    document.open();
-    document.write(this.baseHTML);
-    document.close();
+    this.writeBaseHTML();
 
     this.lookup = {};
     this.consume(jsonData, 0);
@@ -529,7 +542,10 @@ Application.prototype.init = function (jsonString) {
     document.body.addEventListener('keydown', this.keyHandler.bind(this));
     document.body.addEventListener('keyup', this.keyHandler.bind(this));
 
-    const hash = (location.hash + '').trim().replace(/^#\.?/, '');
+    let hash = (location.hash + '').trim().replace(/^#\.?/, '');
+    if (!hash && this.complexRootKeys.length > 0 && this.booleanConfigurations.jumpToComplexRootKey) {
+        hash = `${this.complexRootKeys[0]}`;
+    }
     if (hash) {
         this.loadBreadcrumbs(hash);
     } else {
@@ -553,161 +569,30 @@ Application.prototype.registerSummarizer = function (summarizer, predicates) {
     this.summarizers.push({summarizer, predicates});
 };
 
-Application.prototype.baseHTML = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAAAXNSR0IArs4c6QAAAIxlWElmTU0AKgAAAAgABQESAAMAAAABAAEAAAEaAAUAAAABAAAASgEbAAUAAAABAAAAUgExAAIAAAAHAAAAWodpAAQAAAABAAAAYgAAAAAAAABIAAAAAQAAAEgAAAABUGljYXNhAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAMKADAAQAAAABAAAAMAAAAACBQEUmAAAACXBIWXMAAAsTAAALEwEAmpwYAAAEGGlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNi4wLjAiPgogICA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPgogICAgICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyIKICAgICAgICAgICAgeG1sbnM6SXB0YzR4bXBFeHQ9Imh0dHA6Ly9pcHRjLm9yZy9zdGQvSXB0YzR4bXBFeHQvMjAwOC0wMi0yOS8iCiAgICAgICAgICAgIHhtbG5zOnBob3Rvc2hvcD0iaHR0cDovL25zLmFkb2JlLmNvbS9waG90b3Nob3AvMS4wLyIKICAgICAgICAgICAgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIj4KICAgICAgICAgPHRpZmY6WVJlc29sdXRpb24+NzI8L3RpZmY6WVJlc29sdXRpb24+CiAgICAgICAgIDx0aWZmOlhSZXNvbHV0aW9uPjcyPC90aWZmOlhSZXNvbHV0aW9uPgogICAgICAgICA8dGlmZjpPcmllbnRhdGlvbj4xPC90aWZmOk9yaWVudGF0aW9uPgogICAgICAgICA8SXB0YzR4bXBFeHQ6RGlnaXRhbFNvdXJjZUZpbGVUeXBlPmh0dHA6Ly9jdi5pcHRjLm9yZy9uZXdzY29kZXMvZGlnaXRhbHNvdXJjZXR5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">
-<title>Formatted JSON</title>
-<style type="text/css">
-body {
-  font-family: Courier New, Courier, monospace;
-  color: #000;
-  background-color: #EEE;
-  font-size: 0.8em;
-}
-table {
-  border-collapse: collapse;
-}
-.finder {
-  position: fixed;
-  top: 0;
-  right: 2em;
-  width: 20em;
-  z-index: 1000;
-  background-color: #FFF;
-  padding: 0.5em;
-  border: 1px solid #ccc;
-  border-top: none;
-}
-.finder p {
-  margin: 0.25em 0;
-}
-.finder input {
-  width: 90%;
-  box-sizing: border-box;
-  background-color: #FFF;
-  display:inline-block;
-  color: #000;
-  border-radius: 0px;
-  outline: none;
-}
-.finder .result-counter {
-  position: absolute;
-  width: 85%;
-  left: 0;
-  margin-top: 0.25em;
-  text-align: right;
-}
-.finder .close {
-  width: 10%;
-  cursor: pointer;
-  text-align: right;
-  display:inline-block;
-}
-.finder .no-results {
-  font-style: italic;
-}
-.breadcrumbs {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-  background-color:rgb(250, 250, 250);
-  padding: 0.15em 1em;
-  border-bottom: 1px solid #ccc;
-}
-h1 {
-  margin: 0.1em 0;
-  font-size: 0.4em;
-}
-.none {
-  display: none;
-}
-.json-table {
-    margin: 0 0 1em;
-    display: none;
-    width:100%;
-}
-.json-table-anchor {
-    cursor: ew-resize;
-    width: 2px;
-    min-width: 2px;
-    background-color: #ccc;
-    display: none;
-    padding:0;
-}
-.visible + .json-table-anchor {
-  display: table-cell;
-}
-.json-table.visible {
-  display: table;
-}
-.json-table-content {
-  padding-top: 1.5em;
-}
-.json-table-content.visible .sizer {
-  min-width: 5em;
-}
-.json-table-anchor .sizer {
-  height: 100vh;
-}
-td {
-  vertical-align: top;
-}
-.key, .value {
-  padding: 0.25em;
-  vertical-align: top;
-}
-.key {
-  text-align: left;
-  padding-right: 0.5em;
-}
-.value {
-  text-align: right;
-}
-.active {
-  background-color: #FFF9C4;
-  color: #000;
-}
-.active ::selection {
-  background-color:rgb(255, 185, 87);
-  color: #000;
-}
-.jsoned {
-  color:rgb(185, 97, 97);
-  max-width: 700px;/* this is not strict on table cells, but gives browser a hint about when to start wrapping */
-  overflow-wrap: break-word;
-}
-.raw {
-  color:rgb(97, 98, 185);
-}
-.summary {
-  font-style: italic;
-  display: inline-block;
-  margin-right: 1em;
-}
-.date {
-  white-space: nowrap;
-}
-#mouse-position {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  z-index: 1000;
-  background-color: #EEE;
-}
-.right-padding {
-  width: 150px;
-}
-</style>
-</head>
-<body>
-<!-- <div id="mouse-position"></div> -->
-</body>
-</html>`;
+Application.prototype.getStyle = function () {
+    return this.style;
+};
+
+Application.prototype.rawFavicon = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAAAXNSR0IArs4c6QAAAIxlWElmTU0AKgAAAAgABQESAAMAAAABAAEAAAEaAAUAAAABAAAASgEbAAUAAAABAAAAUgExAAIAAAAHAAAAWodpAAQAAAABAAAAYgAAAAAAAABIAAAAAQAAAEgAAAABUGljYXNhAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAMKADAAQAAAABAAAAMAAAAACBQEUmAAAACXBIWXMAAAsTAAALEwEAmpwYAAAEGGlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNi4wLjAiPgogICA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPgogICAgICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyIKICAgICAgICAgICAgeG1sbnM6SXB0YzR4bXBFeHQ9Imh0dHA6Ly9pcHRjLm9yZy9zdGQvSXB0YzR4bXBFeHQvMjAwOC0wMi0yOS8iCiAgICAgICAgICAgIHhtbG5zOnBob3Rvc2hvcD0iaHR0cDovL25zLmFkb2JlLmNvbS9waG90b3Nob3AvMS4wLyIKICAgICAgICAgICAgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIj4KICAgICAgICAgPHRpZmY6WVJlc29sdXRpb24+NzI8L3RpZmY6WVJlc29sdXRpb24+CiAgICAgICAgIDx0aWZmOlhSZXNvbHV0aW9uPjcyPC90aWZmOlhSZXNvbHV0aW9uPgogICAgICAgICA8dGlmZjpPcmllbnRhdGlvbj4xPC90aWZmOk9yaWVudGF0aW9uPgogICAgICAgICA8SXB0YzR4bXBFeHQ6RGlnaXRhbFNvdXJjZUZpbGVUeXBlPmh0dHA6Ly9jdi5pcHRjLm9yZy9uZXdzY29kZXMvZGlnaXRhbHNvdXJjZXR5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';
+
+Application.prototype.writeBaseHTML = function () {
+    // Remove all content from the current document.body
+    document.body.innerHTML = '';
+    // Add a <style> tag to the document <head> with the base styles
+    const styleEl = el('style', void 0, document.head, {type: 'text/css'});
+    styleEl.textContent = this.getStyle();
+    document.title = "Formatted JSON";
+    // Add favicon to the document head
+    const favicon = document.querySelector('link[rel="icon"]');
+    if (favicon) {
+        favicon.remove();
+    }
+    el('link', void 0, document.head, {
+        rel: 'icon',
+        type: 'image/png',
+        href: this.rawFavicon
+    });
+};
 
 const summarizeSimpleObject = (value, keysToIgnore) => {
     let a, b;
@@ -727,6 +612,10 @@ function JSONPredicate(config) {
     if (!this.type) throw new Error('type is required');
     switch (this.type) {
         case 'keysPresent':
+            if (!config.keys) throw new Error('keys is required');
+            this.keys = config.keys;
+            break;
+        case 'anyKeyPresent':
             if (!config.keys) throw new Error('keys is required');
             this.keys = config.keys;
             break;
@@ -750,6 +639,8 @@ JSONPredicate.prototype.test = function (value) {
         switch (this.type) {
             case 'keysPresent':
                 return this.keys.every(key => value[key] !== void 0);
+            case 'anyKeyPresent':
+                return this.keys.some(key => value[key] !== void 0);
             case 'valueRegex':
                 return this.regex.test(value[this.key]);
             case 'simpleObject':
@@ -767,6 +658,10 @@ function JSONSummarizer(config) {
     this.type = config.type;
     if (!this.type) throw new Error('type is required');
     switch (this.type) {
+        case 'static':
+            if (config.value === void 0) throw new Error('value is required');
+            this.value = config.value;
+            break;
         case 'keyValue':
             if (!config.key) throw new Error('key is required');
             this.key = config.key;
@@ -796,10 +691,12 @@ JSONSummarizer.prototype.summarize = function (value) {
         return;
     }
     switch (this.type) {
+        case 'static':
+            return this.value;
         case 'keyValue':
             return value[this.key];
         case 'joinedValues':
-            return this.keys.map(key => value[key]).join(this.joiner);
+            return this.keys.map(key => value[key]).filter(v => v !== void 0).join(this.joiner);
         case 'financialAmount':
             const amount = value[this.amountKey];
             const currency = value[this.currencyKey].toUpperCase();
@@ -823,11 +720,12 @@ async function initializeExtension() {
     if (pageContent.startsWith('{') || pageContent.startsWith('[')) {
         try {
             // Load configuration from storage before proceeding
-            const summarizeConfigs = await loadSummarizeConfigs();
-            
-            const application = new Application();
+            const appConfigs = await loadConfigs();
+            const summarizationConfiguration = appConfigs.summarizationConfiguration || [];
 
-            for (const summarizeConfig of summarizeConfigs) {
+            const application = new Application(appConfigs);
+
+            for (const summarizeConfig of summarizationConfiguration) {
                 const summarizer = new JSONSummarizer(summarizeConfig.summarizer);
                 const predicates = summarizeConfig.predicates.map(predicate => new JSONPredicate(predicate));
                 application.registerSummarizer(summarizer, predicates);
@@ -855,3 +753,5 @@ if (document.readyState === 'loading') {
     // If the document is already loaded (e.g., script injected after load), run immediately.
     initializeExtension().catch(console.error);
 }
+
+

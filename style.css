@@ -1,0 +1,310 @@
+#page-background-color,
+body {
+    background-color: #EEE;
+}
+
+#page-color,
+body,
+body > div,
+textarea,
+.copy-to-clipboard {
+    color: #000;
+}
+
+#success-flicker,
+.copy-to-clipboard.copied {
+    background-color: rgb(202, 255, 196);
+    color: #000;
+}
+
+#finder,
+.finder {
+    background-color: #FFF;
+    border-color: #CCC;
+}
+
+#finder-input,
+.finder input {
+    color: #000;
+    background-color: #FFF;
+}
+
+#breadcrumbs,
+.breadcrumbs {
+    background-color: inherit; /* rgb(250, 250, 250); */
+    border-color: #AAA;
+}
+
+#json-table-anchor,
+.json-table-anchor {
+    background-color: #ccc;
+}
+
+
+.active {
+    background-color: #FFF9C4;
+    color: #000;
+}
+
+.active-selection,
+.active ::selection {
+    background-color: rgb(255, 185, 87);
+    color: #000;
+}
+
+.jsoned {
+    color: #b96161;
+}
+
+.raw {
+    color: #6162b9;
+}
+
+body {
+    font-family: Courier New, Courier, monospace;
+    font-size: 0.8em;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+.copy-to-clipboard {
+    width: 15em;
+    text-align: center;
+    border: none;
+    background-color: transparent;
+    font-size: 0.8em;
+    margin-left: 1em;
+}
+
+.copy-all {
+    float: right;
+}
+
+.finder {
+    position: fixed;
+    top: 0;
+    right: 2em;
+    width: 20em;
+    z-index: 1000;
+    padding: 0.5em;
+    border: 1px solid;
+    border-top: none;
+}
+
+.finder p {
+    margin: 0.25em 0;
+}
+
+.finder input {
+    width: 90%;
+    box-sizing: border-box;
+    display: inline-block;
+    border-radius: 0px;
+    outline: none;
+}
+
+.finder .result-counter {
+    position: absolute;
+    width: 85%;
+    left: 0;
+    margin-top: 0.25em;
+    text-align: right;
+}
+
+.finder .close {
+    width: 10%;
+    cursor: pointer;
+    text-align: right;
+    display: inline-block;
+}
+
+.finder .no-results {
+    font-style: italic;
+}
+
+.breadcrumbs {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    padding: 0.15em 1em;
+    border-bottom: 1px solid;
+    height: 1.7em;
+}
+
+.breadcrumbs h1 {
+    margin: 0.1em 0;
+    font-size: 0.4em;
+}
+
+.none {
+    display: none;
+}
+
+.json-table {
+    margin: 0 0 1em;
+    display: none;
+    width: 100%;
+}
+
+.json-table-anchor {
+    cursor: ew-resize;
+    width: 2px;
+    min-width: 2px;
+    display: none;
+    padding: 0;
+}
+
+.visible + .json-table-anchor {
+    display: table-cell;
+}
+
+.json-table.visible {
+    display: table;
+}
+
+.json-table-content {
+    padding-top: 2em;
+}
+
+.json-table-content.visible .sizer {
+    min-width: 5em;
+}
+
+.json-table-anchor .sizer {
+    height: 100vh;
+}
+
+td {
+    vertical-align: top;
+}
+
+.key,
+.value {
+    padding: 0.25em;
+    vertical-align: top;
+}
+
+.key {
+    text-align: left;
+    padding-right: 0.5em;
+}
+
+.value {
+    text-align: right;
+}
+
+.jsoned {
+    max-width: 700px; /* this is not strict on table cells, but gives browser a hint about when to start wrapping */
+    overflow-wrap: break-word;
+}
+.jsoned.example-row {
+    max-width: unset;
+    overflow-wrap: unset;
+}
+
+.summary {
+    font-style: italic;
+    display: inline-block;
+    margin-right: 1em;
+}
+
+.date {
+    white-space: nowrap;
+}
+
+.right-padding {
+    width: 150px;
+}
+
+dd {
+    padding: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+.example-row {
+    border: 2px dashed #CCC;
+}
+
+#colorConfigs dt {
+    vertical-align: middle;
+}
+
+#colorConfigs dt span {
+    display: inline-block;
+    margin-left: 0.5em;
+    font-weight: bold;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: inherit;
+}
+
+textarea {
+    width: 100%;
+    height: 400px;
+    font-size: 12px;
+    border: 1px solid;
+    border-radius: 4px;
+    padding: 10px;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.documentation ul {
+    margin: 0;
+    padding-left: 20px;
+}
+.documentation li {
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+.documentation ul ul {
+    margin-top: 5px;
+}
+.documentation code {
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-size: 11px;
+}
+
+
+.control-buttons {
+    min-height: 2em;
+    padding: 1em;
+    text-align: center;
+    background-color: inherit;
+}
+
+.control-buttons.controls {
+    border-top: 2px solid #CCC;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+#status {
+    position: fixed;
+    top:0;
+    left: 0;
+    right: 0;
+    padding: 1em;
+    background-color: #FFF;
+    text-align: center;
+    z-index: 1000;
+}
+
+#status.error {
+    background-color: #FCC;
+}
+
+#status.success {
+    background-color: #CFC;
+}
