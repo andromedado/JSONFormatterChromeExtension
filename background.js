@@ -89,6 +89,13 @@ const DEFAULT_SPECIFIC_CONFIGS = [
     },
     {
         predicates: [
+            {type: 'keysPresent', keys: ['apiType', 'name']},
+            {type: 'valueRegex', key: 'apiType', regex: 'imageVersionType'}
+        ],
+        summarizer: {type: 'keyValue', key: 'name'}
+    },
+    {
+        predicates: [
             {type: 'keysPresent', keys: ['apiType', 'id']},
             {type: 'valueRegex', key: 'apiType', regex: '[Ii]tem'}
         ],
