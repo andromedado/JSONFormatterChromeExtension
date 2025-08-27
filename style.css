@@ -69,6 +69,19 @@ table {
     border-collapse: collapse;
 }
 
+img {
+    float: right;
+    margin-left: 1em;
+    max-width: 50px;
+    max-height: 50px;
+}
+.summary img {
+    max-width: 20px;
+    max-height: 20px;
+    margin-left: 0;
+    margin-right: 0.5em;
+}
+
 .copy-to-clipboard {
     width: 15em;
     text-align: center;
@@ -209,7 +222,11 @@ td {
 .summary {
     font-style: italic;
     display: inline-block;
-    margin-right: 1em;
+    margin-right: 0.5em;
+}
+.summary.image {
+    display: inline-block;
+    margin-right: 0;
 }
 
 .date {

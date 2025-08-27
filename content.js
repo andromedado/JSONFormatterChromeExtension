@@ -383,6 +383,10 @@ Application.prototype.addLookup = function (value, tr) {
     }
 };
 
+Application.prototype.wantsToBeMadeThumbnail = function (value) {
+    return this.booleanConfigurations.thumbnailImages && /^https?:\/\/.*\.(jpg|jpeg|png|gif|bmp|tiff|ico|webp|svg)(\?.*)?$/i.test(value);
+};
+
 Application.prototype.consume = function (json, currentDepth) {
     if (currentDepth === 0) {
         this.rawJSON = json;
@@ -403,9 +407,17 @@ Application.prototype.consume = function (json, currentDepth) {
             classes.push('raw');
         } else {
             classes.push('jsoned');
-            value = JSON.stringify(value);
             if (/^"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)) {
                 classes.push('date');
+            }
+            if (this.wantsToBeMadeThumbnail(value)) {
+                let rawValue = value;
+                let stringifiedValue = JSON.stringify(value);
+                value = el('div', el('img', void 0, void 0, {src: rawValue}));
+                el('span', stringifiedValue, value);
+                classes.push('image');
+            } else {
+                value = JSON.stringify(value);
             }
         }
         el('td', value, tr, {class: classes.join(' ')});
@@ -427,12 +439,19 @@ Application.prototype.consume = function (json, currentDepth) {
             this.complexRootKeys.push(key);
         }
         const valueIsArray = isArray(value);
-        const childTypeHint = valueIsArray ? `[${value.length}]` : '{}';//`{${Object.keys(value).length}}`;
+        let childTypeHint = valueIsArray ? `[${value.length}]` : '{}';//`{${Object.keys(value).length}}`;
         const karat = el('span');
 
         for (const summarizer of this.summarizers) {
             if (summarizer.predicates.every(predicate => predicate.test(value))) {
-                el('span', summarizer.summarizer.summarize(value), karat, {class: 'summary'});
+                let summaryClass = 'summary';
+                let summary = summarizer.summarizer.summarize(value);
+                if (this.wantsToBeMadeThumbnail(summary)) {
+                    summary = el('img', void 0, void 0, {src: summary});
+                    summaryClass += ' image';
+                    childTypeHint = '';
+                }
+                el('span', summary, karat, {class: summaryClass});
                 break;
             }
         }

@@ -15,6 +15,11 @@ const BOOLEAN_CONFIGS = [
         name: 'jumpToComplexRootKey',
         description: 'If no breadcrumbs are specified in the hash, jump to the first complex root object on load',
         defaultValue: false
+    },
+    {
+        name: 'thumbnailImages',
+        description: 'If a value is recognized as an image URL, display a thumbnail of the image',
+        defaultValue: false
     }
 ];
 
@@ -60,6 +65,13 @@ const DEFAULT_SPECIFIC_CONFIGS = [
             {type: 'valueRegex', key: 'apiType', regex: '[Aa]nchor'}
         ],
         summarizer: {type: 'joinedValues', keys: ['sourceType', 'sourceId']}
+    },
+    {
+        predicates: [
+            {type: 'keysPresent', keys: ['pomProjectName']},
+            {type: 'valueRegex', key: 'apiType', regex: 'artifactMetaData'}
+        ],
+        summarizer: {type: 'keyValue', key: 'pomProjectName'}
     },
     {
         predicates: [
