@@ -106,7 +106,7 @@ const DEFAULT_SPECIFIC_CONFIGS = [
             {type: 'keysPresent', keys: ['apiType', 'status']},
             {type: 'valueRegex', key: 'apiType', regex: 'paymentAuthorization'}
         ],
-        summarizer: {type: 'keyValue', key: 'status'}
+        summarizer: {type: 'financialAmount', amountKey: 'amount.amount', currencyKey: 'amount.currency', prefixKey: 'status', prefixJoiner: ' : '}
     },
     {
         predicates: [

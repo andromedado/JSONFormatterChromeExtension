@@ -613,6 +613,10 @@ Application.prototype.writeBaseHTML = function () {
     });
 };
 
+const getNestedValue = (obj, path) => {
+    return path.split('.').reduce((cur, key) => cur != void 0 ? cur[key] : void 0, obj);
+};
+
 const summarizeSimpleObject = (value, keysToIgnore) => {
     let a, b;
     keysToIgnore = keysToIgnore || [];
@@ -695,6 +699,8 @@ function JSONSummarizer(config) {
             if (!config.currencyKey) throw new Error('currencyKey is required');
             this.amountKey = config.amountKey;
             this.currencyKey = config.currencyKey;
+            this.prefixKey = config.prefixKey || null;
+            this.prefixJoiner = config.prefixJoiner || '-';
             break;
         case 'simpleObject':
             this.maxLength = config.maxLength || 30;
@@ -717,16 +723,23 @@ JSONSummarizer.prototype.summarize = function (value) {
         case 'joinedValues':
             return this.keys.map(key => value[key]).filter(v => v !== void 0).join(this.joiner);
         case 'financialAmount':
-            const amount = value[this.amountKey];
-            const currency = value[this.currencyKey].toUpperCase();
+            const amount = getNestedValue(value, this.amountKey);
+            const currency = getNestedValue(value, this.currencyKey).toUpperCase();
+            let formatted;
             switch (currency) {
                 case 'USD':
-                    return `$${amount.toFixed(2).replace(/(\d)(?=(\d\d\d)+(\.\d\d)?$)/g, '$1,')}`;
+                    formatted = `$${amount.toFixed(2).replace(/(\d)(?=(\d\d\d)+(\.\d\d)?$)/g, '$1,')}`;
+                    break;
                 case 'EUR':
-                    return `€${amount.toFixed(2).replace(/(\d)(?=(\d\d\d)+(\.\d\d)?$)/g, '$1,')}`;
+                    formatted = `€${amount.toFixed(2).replace(/(\d)(?=(\d\d\d)+(\.\d\d)?$)/g, '$1,')}`;
+                    break;
                 default:
-                    return `${amount.toFixed(2).replace(/(\d)(?=(\d\d\d)+(\.\d\d)?$)/g, '$1,')} ${currency}`;
+                    formatted = `${amount.toFixed(2).replace(/(\d)(?=(\d\d\d)+(\.\d\d)?$)/g, '$1,')} ${currency}`;
             }
+            if (this.prefixKey && value[this.prefixKey] !== void 0) {
+                return `${value[this.prefixKey]}${this.prefixJoiner}${formatted}`;
+            }
+            return formatted;
         case 'simpleObject':
             return summarizeSimpleObject(value, this.keysToIgnore);
     }
