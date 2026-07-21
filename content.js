@@ -223,10 +223,20 @@ Application.prototype.activate = function (tr) {
         document.getElementById(tr.dataset.childId).classList.add('visible');
         document.getElementById(tr.dataset.childId).closest('.json-table-content').classList.add('visible');
     }
-    document.documentElement.scrollLeft = document.documentElement.scrollWidth;
+    if (this.booleanConfigurations.scrollToActiveNode) {
+        this.scrollIntoViewIfNeeded(tr);
+    }
     //document.documentElement.scrollTop = 0; // too annoying i think
 
     this.renderBreadcrumbs();
+};
+
+Application.prototype.scrollIntoViewIfNeeded = function (tr) {
+    const rect = tr.getBoundingClientRect();
+    const withinHorizontalScroll = rect.left >= 0 && rect.right <= document.documentElement.clientWidth;
+    if (!withinHorizontalScroll) {
+        tr.scrollIntoView({inline: 'nearest', block: 'nearest'});
+    }
 };
 
 Application.prototype.loadBreadcrumbs = function (hash) {

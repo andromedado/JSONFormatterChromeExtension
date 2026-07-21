@@ -20,6 +20,11 @@ const BOOLEAN_CONFIGS = [
         name: 'thumbnailImages',
         description: 'If a value is recognized as an image URL, display a thumbnail of the image',
         defaultValue: false
+    },
+    {
+        name: 'scrollToActiveNode',
+        description: 'When navigating to a node that is not within the horizontal scroll, automatically scroll it into view',
+        defaultValue: true
     }
 ];
 
